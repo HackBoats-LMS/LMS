@@ -1,4 +1,4 @@
-import clientPromise from "@/lib/db";
+import supabase from "@/lib/db";
 
 const students = [
   "241uft0001@ggu.edu.in", "241uft0002@ggu.edu.in", "241uft0003@ggu.edu.in",
@@ -12,9 +12,6 @@ const students = [
 ];
 
 async function seedStudents() {
-  const client = await clientPromise;
-  const db = client.db();
-  
   const users = students.map(email => ({
     email,
     fullName: "",
@@ -22,9 +19,14 @@ async function seedStudents() {
     currentSemester: 1,
     isAdmin: false
   }));
-  
-  await db.collection("users").insertMany(users);
-  console.log("Students seeded successfully");
+
+  const { error } = await supabase.from("users").upsert(users, { onConflict: "email" });
+
+  if (error) {
+    console.error("Error seeding students:", error.message);
+  } else {
+    console.log("Students seeded successfully");
+  }
 }
 
 seedStudents();

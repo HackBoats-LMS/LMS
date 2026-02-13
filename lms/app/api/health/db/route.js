@@ -1,14 +1,16 @@
-import clientPromise from "@/lib/db";
+import supabase from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const client = await clientPromise;
-    const db = client.db();
+    const { error } = await supabase.from('users').select('count', { count: 'exact', head: true });
+
+    if (error) throw error;
 
     return NextResponse.json({
       ok: true,
-      name: db.databaseName
+      status: "connected",
+      provider: "supabase"
     });
 
   } catch (err) {

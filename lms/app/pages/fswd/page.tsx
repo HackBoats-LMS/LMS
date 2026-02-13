@@ -47,30 +47,30 @@ function FSWDContent() {
   return (
     <div className="flex">
       <div className="os-container flex-1">
-      {selectedModule && (
-        <>
-          <button 
-            className={`burger-menu ${isSidebarOpen ? 'hidden' : ''}`} 
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-          
-          <Sidebar 
-            selectedModule={selectedModule}
-            onModuleSelect={handleModuleSelect}
-            isOpen={isSidebarOpen}
-            onClose={() => setIsSidebarOpen(false)}
-          />
-        </>
-      )}
-      
-      <main className={`os-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-        {renderContent()}
-      </main>
-    </div>
+        {selectedModule && (
+          <>
+            <button
+              className={`burger-menu ${isSidebarOpen ? 'hidden' : ''}`}
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+
+            <Sidebar
+              selectedModule={selectedModule}
+              onModuleSelect={handleModuleSelect}
+              isOpen={isSidebarOpen}
+              onClose={() => setIsSidebarOpen(false)}
+            />
+          </>
+        )}
+
+        <main className={`os-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+          {renderContent()}
+        </main>
+      </div>
     </div>
   );
 };

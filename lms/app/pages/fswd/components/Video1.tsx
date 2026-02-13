@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Play, Pause, RotateCcw, Maximize, Minimize } from "lucide-react";
 
@@ -273,7 +274,7 @@ const Video1 = ({ videoId, onComplete }: { videoId: string; onComplete?: () => v
           pointerEvents: showControls ? "auto" : "none"
         }}
       >
-        <div style={{ display: "flex", items: "center", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <button
             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
             className="text-white hover:text-blue-400 transition-colors focus:outline-none"
