@@ -79,7 +79,7 @@ const CourseOverview: React.FC<CourseOverviewProps> = ({ onModuleSelect }) => {
       <div>
         <MainSidebar />
       </div>
-      <div className="flex-1" style={{ minHeight: '100vh', padding: '40px 60px' }}>
+      <div className="flex-1 bg-[#FAFAFA]" style={{ minHeight: '100vh', padding: '40px 60px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div className="lms-header">
             <div className="header-left">
@@ -98,7 +98,7 @@ const CourseOverview: React.FC<CourseOverviewProps> = ({ onModuleSelect }) => {
                       <div
                         key={i}
                         className={`segment ${completedPercentage >= segmentThreshold ? 'completed' :
-                            masteryPercentage >= segmentThreshold ? 'mastery' : ''
+                          masteryPercentage >= segmentThreshold ? 'mastery' : ''
                           }`}
                       ></div>
                     );

@@ -1,728 +1,480 @@
 "use client";
 
+import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from "next-auth/react";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import supabase from "@/lib/db";
-import { Trash2, Edit, Plus, X } from "lucide-react";
+import Link from 'next/link';
+import {
+    LayoutDashboard,
+    Users,
+    Calendar,
+    Megaphone,
+    BarChart,
+    BookOpen,
+    LogOut,
+    User,
+    ChevronRight,
+    Clock,
+    Bell,
+    CreditCard,
+    CheckCircle2,
+    Briefcase,
+    TrendingUp,
+    UserPlus
+} from 'lucide-react';
+import ManageUsers from "./components/ManageUsers";
+import Timetable from "./components/Timetable";
+import Events from "./components/Events";
+
+// --- Types ---
+interface StatsData {
+    total: number;
+    students: number;
+    admins: number;
+    newUsersLast7Days: number;
+}
+
+interface UserData {
+    id: string;
+    email: string;
+    fullName: string;
+    createdAt: string;
+    isAdmin: boolean;
+}
 
 export default function AdminDashboard() {
-  const { data: session } = useSession();
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState("");
-  const [users, setUsers] = useState<any[]>([]);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [stats, setStats] = useState({ total: 0, students: 0, admins: 0 });
-  const [editUser, setEditUser] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ fullName: "", phoneNumber: "", currentSemester: 1 });
-  const [timetable, setTimetable] = useState<any>({});
+    const { data: session } = useSession();
+    const router = useRouter();
+    const [activeTab, setActiveTab] = useState("dashboard");
+    const [stats, setStats] = useState<StatsData>({ total: 0, students: 0, admins: 0, newUsersLast7Days: 0 });
+    const [recentUsers, setRecentUsers] = useState<UserData[]>([]);
+    const [events, setEvents] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-  const [editSubject, setEditSubject] = useState<any>(null);
-  const [subjectForm, setSubjectForm] = useState({ professor: "", description: "" });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [newAdminEmail, setNewAdminEmail] = useState("");
-  const [newAdminPassword, setNewAdminPassword] = useState("");
+    const [subjectStats, setSubjectStats] = useState<any[]>([]);
+    const [currentSubjectIndex, setCurrentSubjectIndex] = useState(0);
 
-
-  // Event State
-  const [events, setEvents] = useState<any[]>([]);
-  const [showEventModal, setShowEventModal] = useState(false);
-  const [eventForm, setEventForm] = useState({
-    id: null,
-    title: "",
-    description: "",
-    type: "announcement",
-    date: "",
-    link: "",
-    image_url: ""
-  });
-
-
-  useEffect(() => {
-    if (session === null) return;
-    if (session && !session.user?.isAdmin) {
-      router.push("/");
-      return;
-    }
-    if (session) {
-      fetchUsers();
-      fetchTimetable();
-    }
-  }, [session]);
-
-  const fetchUsers = async () => {
-    const res = await fetch("/api/users/students");
-    const data = await res.json();
-    if (data.ok) {
-      setUsers(data.data);
-      setStats({
-        total: data.data.length,
-        students: data.data.filter((u: any) => !u.isAdmin).length,
-        admins: data.data.filter((u: any) => u.isAdmin).length
-      });
-    }
-  };
-
-  const addUser = async () => {
-    if (!newUserEmail.trim()) {
-      alert("Please enter an email");
-      return;
-    }
-    const res = await fetch("/api/users/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: newUserEmail })
-    });
-    if (res.ok) {
-      alert("User added!");
-      setNewUserEmail("");
-      fetchUsers();
-    }
-  };
-
-  const addAdmin = async () => {
-    if (!newAdminEmail.trim()) {
-      alert("Please enter an email");
-      return;
-    }
-    if (!newAdminPassword.trim()) {
-      alert("Please enter a password for admin");
-      return;
-    }
-    const res = await fetch("/api/users/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: newAdminEmail, password: newAdminPassword, isAdmin: true })
-    });
-    if (res.ok) {
-      alert("Admin added!");
-      setNewAdminEmail("");
-      setNewAdminPassword("");
-      fetchUsers();
-    } else {
-      const data = await res.json();
-      alert(data.error || "Failed to add admin");
-    }
-  };
-
-  const updateUserSemester = async (email: string, semester: number) => {
-    const res = await fetch("/api/users/update", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, currentSemester: semester })
-    });
-    if (res.ok) {
-      alert("Semester updated!");
-      fetchUsers();
-    }
-  };
-
-  const openEditModal = (user: any) => {
-    setEditUser(user);
-    setEditForm({
-      fullName: user.fullName || "",
-      phoneNumber: user.phoneNumber || "",
-      currentSemester: user.currentSemester || 1
-    });
-  };
-
-  const updateUser = async () => {
-    if (!editForm.fullName.trim() || !editForm.phoneNumber.trim()) {
-      alert("Please fill in all fields");
-      return;
-    }
-    const res = await fetch("/api/users/update", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: editUser.email, ...editForm })
-    });
-    if (res.ok) {
-      alert("User updated!");
-      setEditUser(null);
-      fetchUsers();
-    }
-  };
-
-  const deleteUser = async (email: string) => {
-    if (!confirm(`Delete user ${email}?`)) return;
-    const res = await fetch("/api/users/delete", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
-    });
-    if (res.ok) {
-      alert("User deleted!");
-      fetchUsers();
-    }
-  };
-
-  const fetchTimetable = async () => {
-    const res = await fetch("/api/timetable");
-    const data = await res.json();
-    if (data.ok) setTimetable(data.data);
-  };
-
-  const updateSlot = async (day: string, index: number, field: string, value: string) => {
-    const updated = { ...timetable, [day]: timetable[day].map((slot: any, i: number) => i === index ? { ...slot, [field]: value } : slot) };
-    setTimetable(updated);
-    await fetch("/api/timetable", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ schedule: updated })
-    });
-  };
-
-  const openSubjectModal = (subject: any) => {
-    setEditSubject(subject);
-    setSubjectForm({
-      professor: subject.teacher || "",
-      description: subject.description || ""
-    });
-  };
-
-  const updateSubject = async () => {
-    const updated = { ...timetable };
-    Object.keys(updated).forEach(day => {
-      updated[day] = updated[day].map((slot: any) =>
-        slot.subject === editSubject.subject ? { ...slot, teacher: subjectForm.professor, description: subjectForm.description } : slot
-      );
-    });
-    setTimetable(updated);
-    await fetch("/api/timetable", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ schedule: updated })
-    });
-    setEditSubject(null);
-  };
-
-
-
-
-
-
-
-
-
-  const getUniqueSubjects = () => {
-    const subjects = new Set();
-    Object.values(timetable).forEach((day: any) => {
-      day.forEach((slot: any) => {
-        if (slot.subject) subjects.add(slot.subject);
-      });
-    });
-    return Array.from(subjects);
-  };
-
-  // Event Functions
-  const fetchEvents = async () => {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error) setEvents(data || []);
-  };
-
-  const handleEventSubmit = async () => {
-    if (!eventForm.title || !eventForm.description) return;
-
-    const payload: any = {
-      title: eventForm.title,
-      description: eventForm.description,
-      type: eventForm.type,
-      date: eventForm.date || null,
-      link: eventForm.link || null,
-      image_url: eventForm.image_url || null,
+    // Subject Configuration
+    const SUBJECT_CONFIG: { [key: string]: any } = {
+        'fswd': {
+            name: 'FSWD',
+            title: 'Full Stack Web Dev',
+            color: 'text-cyan-600',
+            bg: 'bg-cyan-50',
+            border: 'border-cyan-100',
+            stroke: '#0891b2'
+        },
+        'os': {
+            name: 'OS',
+            title: 'Operating Systems',
+            color: 'text-purple-600',
+            bg: 'bg-purple-50',
+            border: 'border-purple-100',
+            stroke: '#9333ea'
+        }
     };
 
-    if (eventForm.id) {
-      // Update
-      const { error } = await supabase
-        .from('events')
-        .update(payload)
-        .eq('id', eventForm.id);
-      if (error) {
-        console.error("Error updating event:", error.message, error.details, error.hint, error);
-        alert(`Error updating event: ${error.message}`);
-      } else {
-        fetchEvents();
-      }
-    } else {
-      // Create
-      const { error } = await supabase
-        .from('events')
-        .insert([payload]);
-      if (error) {
-        console.error("Error creating event:", error.message, error.details, error.hint, error);
-        alert(`Error creating event: ${error.message}`);
-      } else {
-        fetchEvents();
-      }
-    }
-    setShowEventModal(false);
-  };
+    // Sidebar Items
+    const sidebarItems = [
+        { id: "dashboard", name: "Dashboard", icon: <LayoutDashboard size={20} /> },
+        { id: "users", name: "Manage Users", icon: <Users size={20} /> },
+        { id: "timetable", name: "Timetable", icon: <Calendar size={20} /> },
+        { id: "events", name: "Events", icon: <Megaphone size={20} /> },
+        { id: "progress", name: "Student Progress", icon: <BarChart size={20} />, link: "/pages/adminProgress" },
+        { id: "courses", name: "Courses", icon: <BookOpen size={20} />, link: "/pages/courses" },
+    ];
 
-  const deleteEvent = async (id: string) => {
-    if (!confirm("Are you sure?")) return;
-    const { error } = await supabase
-      .from('events')
-      .delete()
-      .eq('id', id);
-    if (!error) fetchEvents();
-  };
+    useEffect(() => {
+        if (session === null) return;
+        if (session && !session.user?.isAdmin) {
+            router.push("/");
+            return;
+        }
+        if (session) {
+            fetchDashboardData();
+        }
+    }, [session]);
 
-  useEffect(() => {
-    if (activeTab === 'events') {
-      fetchEvents();
-    }
-  }, [activeTab]);
+    const fetchDashboardData = async () => {
+        setLoading(true);
+        try {
+            await Promise.all([
+                fetchUserStats(),
+                fetchEvents(),
+                fetchSubjectPerformance()
+            ]);
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  return (
-    <div className="min-h-screen w-full bg-white">
-      <nav className="bg-white border-b fixed top-0 left-0 right-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <button onClick={() => router.push("/")} className="text-2xl font-bold text-gray-800 hover:text-blue-600 transition">🎓 LMS</button>
-            <span className="bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full text-sm font-medium">Admin Portal</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-800">{session?.user?.name || "Administrator"}</p>
-              <p className="text-xs text-gray-500">{session?.user?.email}</p>
-            </div>
-            <button onClick={() => signOut({ callbackUrl: "/pages/adminLogin" })} className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition text-sm font-medium">Logout</button>
-          </div>
-        </div>
-      </nav>
+    const fetchSubjectPerformance = async () => {
+        try {
+            const res = await fetch("/api/progress?all=true");
+            const response = await res.json();
 
-      <div className="flex-1 bg-transparent pt-20 relative">
-        <div className="absolute inset-0 opacity-50" style={{
-          backgroundImage: 'radial-gradient(circle, #d1d5db 2px, transparent 2px)',
-          backgroundSize: '20px 20px'
-        }}></div>
+            if (response.success && Array.isArray(response.data)) {
+                const data = response.data;
+                const stats: any[] = [];
 
-        <div className="max-w-[1050px] mx-auto px-6 py-6 relative z-10">
-          {!activeTab ? (
-            <>
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Admin Dashboard</h1>
-                <p className="text-gray-600">Welcome back! Here's your system overview.</p>
-              </div>
+                // Calculate averages for known subjects
+                Object.entries(SUBJECT_CONFIG).forEach(([key, config]) => {
+                    const subjectData = data.filter((p: any) => p.subject && p.subject.toLowerCase() === key && p.score !== undefined);
+                    const totalScore = subjectData.reduce((acc: number, cur: any) => acc + (cur.score || 0), 0);
+                    const avgScore = subjectData.length > 0 ? Math.round(totalScore / subjectData.length) : 0;
 
-              <div className="grid grid-cols-4 gap-4 mb-8">
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition">
-                  <p className="text-gray-600 text-sm mb-1">Total Users</p>
-                  <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
-                  <p className="text-xs text-gray-500 mt-2">Active accounts</p>
+                    // Include even if 0 data, just to show the card
+                    stats.push({
+                        id: key,
+                        ...config,
+                        avgScore,
+                        totalStudents: new Set(subjectData.map((d: any) => d.userEmail)).size
+                    });
+                });
+
+                setSubjectStats(stats);
+            } else {
+                // Fallback if no data or error
+                setSubjectStats(Object.values(SUBJECT_CONFIG).map(c => ({ ...c, avgScore: 0, totalStudents: 0 })));
+            }
+        } catch (error) {
+            console.error("Failed to fetch subject stats", error);
+            setSubjectStats(Object.values(SUBJECT_CONFIG).map(c => ({ ...c, avgScore: 0, totalStudents: 0 })));
+        }
+    };
+
+    const fetchUserStats = async () => {
+        try {
+            const res = await fetch("/api/users/students");
+            const data = await res.json();
+            if (data.ok) {
+                const users = data.data as UserData[];
+
+                // Calculate new users in last 7 days
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                const newUsers = users.filter(u => new Date(u.createdAt) > sevenDaysAgo).length;
+
+                setStats({
+                    total: users.length,
+                    students: users.filter((u: any) => !u.isAdmin).length,
+                    admins: users.filter((u: any) => u.isAdmin).length,
+                    newUsersLast7Days: newUsers
+                });
+
+                // Get 5 most recent users
+                const sortedUsers = [...users].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setRecentUsers(sortedUsers.slice(0, 5));
+            }
+        } catch (error) {
+            console.error("Failed to fetch user stats", error);
+        }
+    };
+
+    const fetchEvents = async () => {
+        try {
+            const res = await fetch("/api/events");
+            const response = await res.json();
+            if (response.success && response.data) {
+                setEvents(response.data.slice(0, 5)); // Show recent 5 events
+            }
+        } catch (error) {
+            console.error("Failed to fetch events", error);
+        }
+    };
+
+    const nextSubject = () => {
+        if (subjectStats.length === 0) return;
+        setCurrentSubjectIndex((prev) => (prev + 1) % subjectStats.length);
+    };
+
+    const prevSubject = () => {
+        if (subjectStats.length === 0) return;
+        setCurrentSubjectIndex((prev) => (prev - 1 + subjectStats.length) % subjectStats.length);
+    };
+
+
+    const handleNavigation = (item: any) => {
+        if (item.link) {
+            router.push(item.link);
+        } else {
+            setActiveTab(item.id);
+        }
+    };
+
+    return (
+        <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
+            {/* Sidebar */}
+            <aside className="w-64 bg-white border-r border-gray-100 flex flex-col p-6 hidden md:flex">
+                <div className="flex items-center gap-2 mb-10 text-[#FF5B5B]">
+                    <span className="text-2xl font-bold">🎓 LMS Admin</span>
                 </div>
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition">
-                  <p className="text-gray-600 text-sm mb-1">Students</p>
-                  <p className="text-2xl font-bold text-gray-800">{stats.students}</p>
-                  <p className="text-xs text-gray-500 mt-2">Enrolled</p>
-                </div>
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition">
-                  <p className="text-gray-600 text-sm mb-1">Admins</p>
-                  <p className="text-2xl font-bold text-gray-800">{stats.admins}</p>
-                  <p className="text-xs text-gray-500 mt-2">Administrators</p>
-                </div>
 
-
-              </div>
-
-              <h2 className="text-lg font-semibold mb-4 text-gray-800">Quick Access</h2>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-5">
-                <button onClick={() => router.push("/pages/courses")} className="relative border overflow-hidden cursor-pointer w-full transition-all duration-100 hover:translate-x-1 hover:translate-y-1" style={{ backgroundColor: "#BBBEC3", boxShadow: "4px 4px 0px 0px rgba(0,0,0,0.5)" }}>
-                  <div className="relative h-24 w-full flex items-center justify-center overflow-hidden">
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <defs>
-                        <pattern id="mesh-1" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
-                          <path d="M 3 0 L 0 0 0 3" fill="none" stroke="#C6B7F2" strokeWidth="0.8" />
-                        </pattern>
-                      </defs>
-                      <rect width="100%" height="100%" fill="url(#mesh-1)" />
-                    </svg>
-                    <span className="relative z-10 text-4xl">📚</span>
-                  </div>
-                  <div className="flex items-center justify-center py-2 bg-white">
-                    <p className="font-medium text-sm">Courses</p>
-                  </div>
-                </button>
-
-                <button onClick={() => setActiveTab("users")} className="relative border overflow-hidden cursor-pointer w-full transition-all duration-100 hover:translate-x-1 hover:translate-y-1" style={{ backgroundColor: "#BBBEC3", boxShadow: "4px 4px 0px 0px rgba(0,0,0,0.5)" }}>
-                  <div className="relative h-24 w-full flex items-center justify-center overflow-hidden">
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <defs>
-                        <pattern id="mesh-2" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
-                          <path d="M 3 0 L 0 0 0 3" fill="none" stroke="#97ABC3" strokeWidth="0.8" />
-                        </pattern>
-                      </defs>
-                      <rect width="100%" height="100%" fill="url(#mesh-2)" />
-                    </svg>
-                    <span className="relative z-10 text-4xl">👥</span>
-                  </div>
-                  <div className="flex items-center justify-center py-2 bg-white">
-                    <p className="font-medium text-sm">Manage Users</p>
-                  </div>
-                </button>
-
-
-                <button onClick={() => setActiveTab("timetable")} className="relative border overflow-hidden cursor-pointer w-full transition-all duration-100 hover:translate-x-1 hover:translate-y-1" style={{ backgroundColor: "#BBBEC3", boxShadow: "4px 4px 0px 0px rgba(0,0,0,0.5)" }}>
-                  <div className="relative h-24 w-full flex items-center justify-center overflow-hidden">
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <defs>
-                        <pattern id="mesh-4" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
-                          <path d="M 3 0 L 0 0 0 3" fill="none" stroke="#B9A2A7" strokeWidth="0.8" />
-                        </pattern>
-                      </defs>
-                      <rect width="100%" height="100%" fill="url(#mesh-4)" />
-                    </svg>
-                    <span className="relative z-10 text-4xl">📅</span>
-                  </div>
-                  <div className="flex items-center justify-center py-2 bg-white">
-                    <p className="font-medium text-sm">Timetable</p>
-                  </div>
-                </button>
-
-
-                <button onClick={() => setActiveTab("events")} className="relative border overflow-hidden cursor-pointer w-full transition-all duration-100 hover:translate-x-1 hover:translate-y-1" style={{ backgroundColor: "#BBBEC3", boxShadow: "4px 4px 0px 0px rgba(0,0,0,0.5)" }}>
-                  <div className="relative h-24 w-full flex items-center justify-center overflow-hidden">
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <defs>
-                        <pattern id="mesh-6" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
-                          <path d="M 3 0 L 0 0 0 3" fill="none" stroke="#FCA5A5" strokeWidth="0.8" />
-                        </pattern>
-                      </defs>
-                      <rect width="100%" height="100%" fill="url(#mesh-6)" />
-                    </svg>
-                    <span className="relative z-10 text-4xl">📢</span>
-                  </div>
-                  <div className="flex items-center justify-center py-2 bg-white">
-                    <p className="font-medium text-sm">Events</p>
-                  </div>
-                </button>
-
-
-                <button onClick={() => router.push("/pages/adminProgress")} className="relative border overflow-hidden cursor-pointer w-full transition-all duration-100 hover:translate-x-1 hover:translate-y-1" style={{ backgroundColor: "#BBBEC3", boxShadow: "4px 4px 0px 0px rgba(0,0,0,0.5)" }}>
-                  <div className="relative h-24 w-full flex items-center justify-center overflow-hidden">
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <defs>
-                        <pattern id="mesh-5" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
-                          <path d="M 3 0 L 0 0 0 3" fill="none" stroke="#8B869B" strokeWidth="0.8" />
-                        </pattern>
-                      </defs>
-                      <rect width="100%" height="100%" fill="url(#mesh-5)" />
-                    </svg>
-                    <span className="relative z-10 text-4xl">📊</span>
-                  </div>
-                  <div className="flex items-center justify-center py-2 bg-white">
-                    <p className="font-medium text-sm">Student Progress</p>
-                  </div>
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              {activeTab === "events" && (
-                <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200">
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <button onClick={() => setActiveTab("")} className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 inline-block">← Back</button>
-                      <h2 className="text-2xl font-bold text-gray-800">📢 Manage Events & Announcements</h2>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setEventForm({ id: null, title: "", description: "", type: "announcement", date: "", link: "", image_url: "" });
-                        setShowEventModal(true);
-                      }}
-                      className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition text-sm font-medium flex items-center gap-2"
-                    >
-                      <Plus size={16} /> Add New
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    {events.length === 0 ? (
-                      <p className="text-gray-500 text-center py-8">No events found.</p>
-                    ) : (
-                      events.map((event) => (
-                        <div key={event.id} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition bg-gray-50 flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${event.type === 'event' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                                {event.type}
-                              </span>
-                              {event.date && (
-                                <span className="text-xs text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded">
-                                  {new Date(event.date).toLocaleDateString()}
-                                </span>
-                              )}
-                            </div>
-                            <h3 className="font-bold text-lg text-gray-900 mb-1">{event.title}</h3>
-                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">{event.description}</p>
-                            <div className="flex gap-4 text-xs text-gray-500">
-                              {event.link && <span className="flex items-center gap-1">🔗 Has Link</span>}
-                              {event.image_url && <span className="flex items-center gap-1">🖼️ Has Image</span>}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 ml-4">
-                            <button
-                              onClick={() => {
-                                setEventForm({ ...event });
-                                setShowEventModal(true);
-                              }}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded transition"
-                              title="Edit"
-                            >
-                              <Edit size={18} />
-                            </button>
-                            <button
-                              onClick={() => deleteEvent(event.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded transition"
-                              title="Delete"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "users" && (
-                <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200">
-                  <div className="mb-8">
-                    <button onClick={() => setActiveTab("")} className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 inline-block">← Back</button>
-                    <h2 className="text-2xl font-bold text-gray-800">👥 Manage Users</h2>
-                  </div>
-
-                  <div className="bg-blue-50 p-6 rounded-lg mb-8 border border-blue-200">
-                    <h3 className="text-sm font-semibold text-blue-900 mb-4">Add New Student</h3>
-                    <div className="flex gap-3">
-                      <input type="email" placeholder="Student Email" value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)} className="border border-blue-300 p-2.5 rounded-lg flex-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                      <button onClick={addUser} className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition text-sm font-medium">+ Add</button>
-                    </div>
-                  </div>
-
-                  <div className="bg-purple-50 p-6 rounded-lg mb-8 border border-purple-200">
-                    <h3 className="text-sm font-semibold text-purple-900 mb-4">Add New Admin</h3>
-                    <div className="flex flex-col gap-3">
-                      <input type="email" placeholder="Admin Email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} className="border border-purple-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
-                      <input type="password" placeholder="Admin Password" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} className="border border-purple-300 p-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
-                      <button onClick={addAdmin} className="bg-purple-600 text-white px-6 py-2.5 rounded-lg hover:bg-purple-700 transition text-sm font-medium">+ Add Admin</button>
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">All Users</h3>
-                  <input type="text" placeholder="Search by name or email..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full border border-blue-300 p-2.5 rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {users.filter(user => user.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) || user.email.toLowerCase().includes(searchQuery.toLowerCase())).map((user) => (
-                      <div key={user.id} className="border border-blue-200 rounded-lg p-5 hover:shadow-md transition bg-blue-50">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-800">{user.fullName || "Not set"}</h4>
-                            <p className="text-sm text-gray-600">{user.email}</p>
-                          </div>
-                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-700">{user.isAdmin ? "Admin" : "Student"}</span>
-                        </div>
-                        <div className="space-y-2 mb-4 text-sm text-gray-600">
-                          <p>📱 {user.phoneNumber || "Not set"}</p>
-                          {!user.isAdmin && <p>📚 Semester {user.currentSemester}</p>}
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => openEditModal(user)} className="flex-1 text-white px-3 py-2 rounded-lg transition text-sm font-medium" style={{ backgroundColor: '#9CCFFF', color: '#000' }}>Edit</button>
-
-                          <button onClick={() => deleteUser(user.email)} className="flex-1 text-white px-3 py-2 rounded-lg transition text-sm font-medium" style={{ backgroundColor: '#FF5B5B' }}>Delete</button>
-                        </div>
-                      </div>
+                <nav className="flex-1 space-y-1">
+                    {sidebarItems.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => handleNavigation(item)}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors w-full text-left ${activeTab === item.id ? 'bg-[#FFF0F0] text-[#FF5B5B]' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+                        >
+                            <span className={activeTab === item.id ? "text-[#FF5B5B]" : "text-gray-400"}>{item.icon}</span>
+                            {item.name}
+                        </button>
                     ))}
-                  </div>
+                </nav>
+
+                <div className="pt-6 border-t border-gray-100 space-y-1">
+                    <button
+                        onClick={() => signOut({ callbackUrl: "/pages/adminLogin" })}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-red-600 w-full"
+                    >
+                        <LogOut size={20} className="text-gray-400" />
+                        Logout
+                    </button>
                 </div>
-              )}
+            </aside>
 
+            {/* Main Content */}
+            <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
+                {/* Header */}
+                <header className="flex justify-between items-center mb-8">
+                    <h1 className="text-2xl font-bold text-gray-800">
+                        {sidebarItems.find(i => i.id === activeTab)?.name || "Dashboard"}
+                    </h1>
 
-
-              {activeTab === "timetable" && (
-                <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200">
-                  <div className="mb-8">
-                    <button onClick={() => setActiveTab("")} className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 inline-block">← Back</button>
-                    <h2 className="text-2xl font-bold text-gray-800">📅 Manage Timetable</h2>
-                  </div>
-                  <div className="overflow-x-auto mb-8">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-teal-50 border-b border-teal-200">
-                          <th className="p-4 text-left font-semibold text-sm text-teal-900 border-r border-teal-200">Time</th>
-                          {Object.keys(timetable).map(day => <th key={day} className="p-4 text-left font-semibold text-sm text-teal-900 border-r border-teal-200 last:border-r-0">{day}</th>)}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {timetable[Object.keys(timetable)[0]]?.map((_: any, index: number) => (
-                          <tr key={index} className="border-b border-teal-100 hover:bg-teal-50 transition">
-                            <td className="p-4 font-semibold text-sm text-gray-800 bg-teal-50 border-r border-teal-200">{timetable[Object.keys(timetable)[0]][index].time}</td>
-                            {Object.keys(timetable).map(day => (
-                              <td key={day} className="p-4 border-r border-teal-200 last:border-r-0">
-                                <input type="text" value={timetable[day][index].subject} onChange={(e) => updateSlot(day, index, 'subject', e.target.value)} className="w-full p-2.5 border border-teal-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent" placeholder="Subject" />
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Subject Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {getUniqueSubjects().map((subject: any) => {
-                      const subjectData: any = Object.values(timetable).flat().find((s: any) => s.subject === subject);
-                      return (
-                        <div key={subject} className="border border-teal-200 rounded-lg p-4 hover:shadow-md transition bg-teal-50">
-                          <h4 className="font-semibold text-gray-800 mb-2">{subject}</h4>
-                          <p className="text-sm text-gray-600 mb-3">Professor: {subjectData?.teacher || "Not set"}</p>
-                          <p className="text-sm text-gray-600 mb-4">Description: {subjectData?.description || "Not set"}</p>
-                          <button onClick={() => openSubjectModal(subjectData)} className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition text-sm font-medium">Edit</button>
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-3">
+                            <div className="text-right hidden sm:block">
+                                <p className="text-sm font-medium text-gray-800">{session?.user?.name || "Administrator"}</p>
+                                <p className="text-xs text-gray-500">{session?.user?.email}</p>
+                            </div>
+                            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
+                                <User className="text-gray-400" />
+                            </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                    </div>
+                </header>
 
+                {activeTab === "dashboard" ? (
+                    <>
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                            {/* Total Users Card */}
+                            <div className="p-5 rounded-2xl border bg-blue-50 border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-500 mb-1">Total Users</p>
+                                        <h3 className="text-2xl font-bold text-gray-800">{stats.total}</h3>
+                                    </div>
+                                    <div className="p-2 bg-white rounded-lg shadow-sm">
+                                        <Users className="w-6 h-6 text-blue-600" />
+                                    </div>
+                                </div>
+                                <div className="w-full bg-blue-200 rounded-full h-1.5 mb-2">
+                                    <div className="h-1.5 rounded-full bg-blue-500" style={{ width: '100%' }}></div>
+                                </div>
+                            </div>
 
-            </>
-          )}
+                            {/* Students Card */}
+                            <div className="p-5 rounded-2xl border bg-green-50 border-green-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-500 mb-1">Students</p>
+                                        <h3 className="text-2xl font-bold text-gray-800">{stats.students}</h3>
+                                    </div>
+                                    <div className="p-2 bg-white rounded-lg shadow-sm">
+                                        <Briefcase className="w-6 h-6 text-green-600" />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-green-700 bg-green-100 inline-block px-2 py-0.5 rounded-full font-medium">
+                                    {(stats.students / (stats.total || 1) * 100).toFixed(0)}% of users
+                                </p>
+                            </div>
+
+                            {/* New Signups Card */}
+                            <div className="p-5 rounded-2xl border bg-orange-50 border-orange-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-500 mb-1">New (7d)</p>
+                                        <h3 className="text-2xl font-bold text-gray-800">{stats.newUsersLast7Days}</h3>
+                                    </div>
+                                    <div className="p-2 bg-white rounded-lg shadow-sm">
+                                        <UserPlus className="w-6 h-6 text-orange-600" />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-orange-700 bg-orange-100 inline-block px-2 py-0.5 rounded-full font-medium">
+                                    Recent Growth
+                                </p>
+                            </div>
+
+                            {/* Admins Card */}
+                            <div className="p-5 rounded-2xl border bg-purple-50 border-purple-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-500 mb-1">Admins</p>
+                                        <h3 className="text-2xl font-bold text-gray-800">{stats.admins}</h3>
+                                    </div>
+                                    <div className="p-2 bg-white rounded-lg shadow-sm">
+                                        <CheckCircle2 className="w-6 h-6 text-purple-600" />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-purple-700 bg-purple-100 inline-block px-2 py-0.5 rounded-full font-medium">
+                                    System Staff
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                            {/* Recent Users Widget */}
+                            <div className="lg:col-span-2 bg-[#F2F6FF] p-5 rounded-2xl border border-blue-100/50 shadow-sm flex flex-col h-[22rem]">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="font-bold text-gray-800">Newest Members</h3>
+                                    <button onClick={() => setActiveTab("users")} className="text-xs font-medium text-blue-600 bg-white px-3 py-1 rounded-full shadow-sm hover:bg-gray-50">Manage All</button>
+                                </div>
+
+                                <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+                                    {recentUsers.length > 0 ? recentUsers.map((user) => (
+                                        <div key={user.id} className="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between hover:shadow-md transition-shadow cursor-default border border-transparent hover:border-gray-100">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${user.isAdmin ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                    {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-gray-800">{user.fullName}</h4>
+                                                    <p className="text-xs text-gray-500">{user.email}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${user.isAdmin ? 'bg-purple-50 text-purple-600' : 'bg-green-50 text-green-600'}`}>
+                                                    {user.isAdmin ? 'Admin' : 'Student'}
+                                                </span>
+                                                <p className="text-[10px] text-gray-400 mt-1">
+                                                    {new Date(user.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="text-center text-gray-500 mt-10">
+                                            <p className="text-sm">No recent users found.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Subject Average Performance Widget (Replaces Calendar) */}
+                            <div className={`lg:col-span-1 p-5 rounded-2xl border shadow-sm flex flex-col h-[22rem] overflow-hidden relative transition-colors duration-300 ${subjectStats.length > 0 ? subjectStats[currentSubjectIndex].bg : 'bg-white'} ${subjectStats.length > 0 ? subjectStats[currentSubjectIndex].border : 'border-gray-200'}`}>
+                                <div className="flex justify-between items-center mb-6 relative z-10">
+                                    <h3 className="font-bold text-gray-800">Avg Performance</h3>
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={prevSubject}
+                                            className="p-1.5 rounded-full bg-white/60 hover:bg-white text-gray-500 hover:text-gray-800 transition shadow-sm"
+                                        >
+                                            <ChevronRight className="w-4 h-4 rotate-180" />
+                                        </button>
+                                        <button
+                                            onClick={nextSubject}
+                                            className="p-1.5 rounded-full bg-white/60 hover:bg-white text-gray-500 hover:text-gray-800 transition shadow-sm"
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {subjectStats.length > 0 ? (
+                                    <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                                        <div className="relative w-40 h-40 mb-4 items-center justify-center flex">
+                                            {/* Circular Progress */}
+                                            <svg className="w-full h-full transform -rotate-90">
+                                                <circle
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    r="70"
+                                                    fill="transparent"
+                                                    stroke="#e5e7eb"
+                                                    strokeWidth="10"
+                                                />
+                                                <circle
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    r="70"
+                                                    fill="transparent"
+                                                    stroke={subjectStats[currentSubjectIndex].stroke}
+                                                    strokeWidth="10"
+                                                    strokeDasharray="440"
+                                                    strokeDashoffset={440 - (440 * subjectStats[currentSubjectIndex].avgScore) / 100}
+                                                    strokeLinecap="round"
+                                                    className={`transition-all duration-1000 ease-out`}
+                                                />
+                                            </svg>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <span className={`text-4xl font-bold ${subjectStats[currentSubjectIndex].color}`}>
+                                                    {subjectStats[currentSubjectIndex].avgScore}%
+                                                </span>
+                                                <span className="text-xs text-gray-500 font-medium">Average</span>
+                                            </div>
+                                        </div>
+
+                                        <h4 className={`text-lg font-bold mb-1 ${subjectStats[currentSubjectIndex].color}`}>
+                                            {subjectStats[currentSubjectIndex].name}
+                                        </h4>
+                                        <p className="text-xs text-gray-500 text-center px-4">
+                                            {subjectStats[currentSubjectIndex].title}
+                                        </p>
+
+                                        <div className="mt-4 flex items-center gap-2 px-3 py-1 bg-white/60 rounded-full">
+                                            <Users size={12} className="text-gray-400" />
+                                            <span className="text-xs font-medium text-gray-600">{subjectStats[currentSubjectIndex].totalStudents} Active Students</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+                                        <BarChart className="w-10 h-10 mb-2 opacity-50" />
+                                        <p className="text-sm">No data available</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Quick Access Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                            <button onClick={() => setActiveTab("users")} className="flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 group">
+                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                    <Users size={24} />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-800">Manage Users</h3>
+                            </button>
+                            <button onClick={() => setActiveTab("timetable")} className="flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 group">
+                                <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                    <Calendar size={24} />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-800">Edit Timetable</h3>
+                            </button>
+                            <button onClick={() => setActiveTab("events")} className="flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 group">
+                                <div className="w-12 h-12 bg-yellow-50 text-yellow-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                    <Megaphone size={24} />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-800">Post Event</h3>
+                            </button>
+                            <button onClick={() => router.push("/pages/adminProgress")} className="flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 group">
+                                <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                    <BarChart size={24} />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-800">Student Progress</h3>
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[500px]">
+                        {activeTab === "courses" && <div />}
+                        {activeTab === "events" && <Events onBack={() => setActiveTab("dashboard")} />}
+                        {activeTab === "users" && <ManageUsers onBack={() => setActiveTab("dashboard")} />}
+                        {activeTab === "timetable" && <Timetable onBack={() => setActiveTab("dashboard")} />}
+                    </div>
+                )}
+            </main>
         </div>
-      </div>
-
-      {editUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Edit User: {editUser.email}</h2>
-            <input type="text" placeholder="Full Name" value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} className="w-full border border-blue-300 p-2 mb-3 rounded" />
-            <input type="text" placeholder="Phone Number" value={editForm.phoneNumber} onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })} className="w-full border border-blue-300 p-2 mb-3 rounded" />
-            {!editUser.isAdmin && (<select value={editForm.currentSemester} onChange={(e) => setEditForm({ ...editForm, currentSemester: Number(e.target.value) })} className="w-full border border-blue-300 p-2 mb-3 rounded">{[1, 2, 3, 4, 5, 6, 7, 8].map(sem => <option key={sem} value={sem}>Semester {sem}</option>)}</select>)}
-            <div className="flex gap-2">
-              <button onClick={updateUser} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save</button>
-              <button onClick={() => setEditUser(null)} className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {editSubject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Edit Subject: {editSubject.subject}</h2>
-            <input type="text" placeholder="Professor Name" value={subjectForm.professor} onChange={(e) => setSubjectForm({ ...subjectForm, professor: e.target.value })} className="w-full border border-teal-300 p-2 mb-3 rounded" />
-            <textarea placeholder="Description" value={subjectForm.description} onChange={(e) => setSubjectForm({ ...subjectForm, description: e.target.value })} className="w-full border border-teal-300 p-2 mb-3 rounded h-24" />
-            <div className="flex gap-2">
-              <button onClick={updateSubject} className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Save</button>
-              <button onClick={() => setEditSubject(null)} className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {showEventModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h2 className="text-lg font-bold text-gray-800">{eventForm.id ? "Edit Item" : "New Item"}</h2>
-              <button
-                onClick={() => setShowEventModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Title</label>
-                <input
-                  required
-                  value={eventForm.title}
-                  onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                  placeholder="e.g. Annual Tech Symposium"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Type</label>
-                  <select
-                    value={eventForm.type}
-                    onChange={(e) => setEventForm({ ...eventForm, type: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm appearance-none"
-                  >
-                    <option value="announcement">Announcement</option>
-                    <option value="event">Event</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Date</label>
-                  <input
-                    type="date"
-                    value={eventForm.date}
-                    onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-gray-600"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Description</label>
-                <textarea
-                  required
-                  rows={4}
-                  value={eventForm.description}
-                  onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm resize-none"
-                  placeholder="Details..."
-                />
-              </div>
-
-              <div className="space-y-3 pt-2">
-                <div>
-                  <input
-                    value={eventForm.link || ""}
-                    onChange={(e) => setEventForm({ ...eventForm, link: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm placeholder:text-gray-300"
-                    placeholder="External Link (https://...)"
-                  />
-                </div>
-                <div>
-                  <input
-                    value={eventForm.image_url || ""}
-                    onChange={(e) => setEventForm({ ...eventForm, image_url: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm placeholder:text-gray-300"
-                    placeholder="Image URL (https://...)"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 flex justify-end gap-3">
-                <button
-                  onClick={() => setShowEventModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleEventSubmit}
-                  className="px-6 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all"
-                >
-                  {eventForm.id ? "Update" : "Create"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
+    );
 }

@@ -1,4 +1,4 @@
-import clientPromise from "@/lib/db";
+import supabase from "@/lib/db";
 
 const timetableData = {
   id: "main",
@@ -63,15 +63,15 @@ const timetableData = {
 };
 
 async function seedTimetable() {
-  const client = await clientPromise;
-  const db = client.db();
-  
-  await db.collection("timetable").updateOne(
-    { id: "main" },
-    { $set: timetableData },
-    { upsert: true }
-  );
-  console.log("Timetable seeded successfully");
+  const { error } = await supabase
+    .from("timetable")
+    .upsert(timetableData, { onConflict: "id" });
+
+  if (error) {
+    console.error("Error seeding timetable:", error.message);
+  } else {
+    console.log("Timetable seeded successfully");
+  }
 }
 
 seedTimetable();

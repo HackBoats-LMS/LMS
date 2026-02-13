@@ -23,10 +23,7 @@ export interface OptionCardLProps {
   };
 }
 
-// Global type augmentation for MongoDB client promise
-declare global {
-  var _mongoClientPromise: Promise<import('mongodb').MongoClient> | undefined;
-}
+// Global type augmentation
 
 // NextAuth type augmentation
 declare module "next-auth" {
@@ -58,4 +55,4 @@ declare module "next-auth/jwt" {
   }
 }
 
-export {};
+export { };

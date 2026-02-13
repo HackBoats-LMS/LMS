@@ -1,0 +1,87 @@
+{
+    "Monday": [
+        {
+            "time": "09:00",
+            "subject": "FSWD - React.js",
+            "teacher": "Prof. Smith",
+            "description": "Introduction to Hooks"
+        },
+        {
+            "time": "11:00",
+            "subject": "Operating Systems",
+            "teacher": "Dr. Johnson",
+            "description": "Process Scheduling"
+        },
+        {
+            "time": "14:00",
+            "subject": "",
+            "teacher": "",
+            "description": ""
+        }
+    ],
+    "Tuesday": [
+        {
+            "time": "10:00",
+            "subject": "FSWD - Node.js",
+            "teacher": "Prof. Smith",
+            "description": "Express Middleware"
+        },
+        {
+            "time": "13:00",
+            "subject": "",
+            "teacher": "",
+            "description": ""
+        }
+    ],
+    "Wednesday": [
+        {
+            "time": "09:00",
+            "subject": "Operating Systems",
+            "teacher": "Dr. Johnson",
+            "description": "Memory Management"
+        },
+        {
+            "time": "11:00",
+            "subject": "FSWD - Database",
+            "teacher": "Prof. Williams",
+            "description": "MongoDB Aggregation"
+        }
+    ],
+    "Thursday": [
+        {
+            "time": "10:00",
+            "subject": "FSWD - Project",
+            "teacher": "Prof. Smith",
+            "description": "Project Review"
+        },
+        {
+            "time": "14:00",
+            "subject": "Soft Skills",
+            "teacher": "Mrs. Davis",
+            "description": "Communication"
+        }
+    ],
+    "Friday": [
+        {
+            "time": "09:00",
+            "subject": "Operating Systems",
+            "teacher": "Dr. Johnson",
+            "description": "File Systems"
+        },
+        {
+            "time": "11:00",
+            "subject": "FSWD - Deployment",
+            "teacher": "Prof. Williams",
+            "description": "CI/CD Pipelines"
+        }
+    ],
+    "Saturday": [
+        {
+            "time": "10:00",
+            "subject": "FSWD - Hackathon",
+            "teacher": "All Faculty",
+            "description": "Weekly Hackathon"
+        }
+    ],
+    "Sunday": []
+}

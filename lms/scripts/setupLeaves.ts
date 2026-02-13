@@ -1,20 +1,10 @@
-import clientPromise from "@/lib/db";
+// This script is no longer used for Supabase as indexes should be created via SQL migrations.
+// To setup TTL index in Supabase, run the following SQL:
+// CREATE INDEX leaves_expires_at_idx ON leaves (expires_at);
+// Note: Supabase/Postgres doesn't support TTL indexes natively like MongoDB. You'd use pg_cron or similar.
 
 async function setupLeaveCollection() {
-  try {
-    const client = await clientPromise;
-    const db = client.db("lms");
-    
-    // Create TTL index to auto-delete documents after 30 days
-    await db.collection("leaves").createIndex(
-      { expiresAt: 1 },
-      { expireAfterSeconds: 0 }
-    );
-    
-    console.log("✅ Leave collection setup complete with TTL index");
-  } catch (error) {
-    console.error("❌ Error setting up leave collection:", error);
-  }
+  console.log("For Supabase, please use SQL Editor to create indexes.");
 }
 
 setupLeaveCollection();
