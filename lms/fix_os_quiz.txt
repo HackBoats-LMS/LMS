@@ -1,0 +1,27 @@
+Unit2.tsx - Replace these lines:
+<Quiz title="Module 1 Quiz" questions={module1Quiz} /> → <Quiz title="Module 1 Quiz" questions={module1Quiz} subject="OS" unitId={2} moduleId={1} />
+<Quiz title="Module 2 Quiz" questions={module2Quiz} /> → <Quiz title="Module 2 Quiz" questions={module2Quiz} subject="OS" unitId={2} moduleId={2} />
+<Quiz title="Module 3 Quiz" questions={module3Quiz} /> → <Quiz title="Module 3 Quiz" questions={module3Quiz} subject="OS" unitId={2} moduleId={3} />
+<Quiz title="Module 4 Quiz" questions={module4Quiz} /> → <Quiz title="Module 4 Quiz" questions={module4Quiz} subject="OS" unitId={2} moduleId={4} />
+<Quiz title="Unit 2 Comprehensive Quiz" questions={unit2Quiz} /> → <Quiz title="Unit 2 Comprehensive Quiz" questions={unit2Quiz} subject="OS" unitId={2} moduleId={5} />
+
+Unit3.tsx - Replace these lines:
+<Quiz title="Module 1 Quiz" questions={module1Quiz} /> → <Quiz title="Module 1 Quiz" questions={module1Quiz} subject="OS" unitId={3} moduleId={1} />
+<Quiz title="Module 2 Quiz" questions={module2Quiz} /> → <Quiz title="Module 2 Quiz" questions={module2Quiz} subject="OS" unitId={3} moduleId={2} />
+<Quiz title="Module 3 Quiz" questions={module2Quiz} /> → <Quiz title="Module 3 Quiz" questions={module2Quiz} subject="OS" unitId={3} moduleId={3} />
+<Quiz title="Module 4 Quiz" questions={module3Quiz} /> → <Quiz title="Module 4 Quiz" questions={module3Quiz} subject="OS" unitId={3} moduleId={4} />
+<Quiz title="Unit 3 Comprehensive Quiz" questions={unit3Quiz} /> → <Quiz title="Unit 3 Comprehensive Quiz" questions={unit3Quiz} subject="OS" unitId={3} moduleId={5} />
+
+Unit4.tsx - Replace these lines:
+<Quiz title="Module 1 Quiz" questions={module1Quiz} /> → <Quiz title="Module 1 Quiz" questions={module1Quiz} subject="OS" unitId={4} moduleId={1} />
+<Quiz title="Module 2 Quiz" questions={module2Quiz} /> → <Quiz title="Module 2 Quiz" questions={module2Quiz} subject="OS" unitId={4} moduleId={2} />
+<Quiz title="Module 3 Quiz" questions={module3Quiz} /> → <Quiz title="Module 3 Quiz" questions={module3Quiz} subject="OS" unitId={4} moduleId={3} />
+<Quiz title="Module 4 Quiz" questions={module4Quiz} /> → <Quiz title="Module 4 Quiz" questions={module4Quiz} subject="OS" unitId={4} moduleId={4} />
+<Quiz title="Unit 4 Comprehensive Quiz" questions={unit4Quiz} /> → <Quiz title="Unit 4 Comprehensive Quiz" questions={unit4Quiz} subject="OS" unitId={4} moduleId={5} />
+
+Unit5.tsx - Replace these lines:
+<Quiz title="Module 1 Quiz" questions={module1Quiz} /> → <Quiz title="Module 1 Quiz" questions={module1Quiz} subject="OS" unitId={5} moduleId={1} />
+<Quiz title="Module 2 Quiz" questions={module2Quiz} /> → <Quiz title="Module 2 Quiz" questions={module2Quiz} subject="OS" unitId={5} moduleId={2} />
+<Quiz title="Module 3 Quiz" questions={module3Quiz} /> → <Quiz title="Module 3 Quiz" questions={module3Quiz} subject="OS" unitId={5} moduleId={3} />
+<Quiz title="Module 4 Quiz" questions={module4Quiz} /> → <Quiz title="Module 4 Quiz" questions={module4Quiz} subject="OS" unitId={5} moduleId={4} />
+<Quiz title="Unit 5 Comprehensive Quiz" questions={unit5Quiz} /> → <Quiz title="Unit 5 Comprehensive Quiz" questions={unit5Quiz} subject="OS" unitId={5} moduleId={5} />

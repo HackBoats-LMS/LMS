@@ -1,0 +1,120 @@
+
+> lms@0.1.0 build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of d:\hackathon1\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * d:\hackathon1\LMS\lms\package-lock.json
+   * d:\hackathon1\LMS\package-lock.json
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 4 errors:
+./LMS/lms/app/pages/ls/units/Unit2.tsx:22:24
+Parsing ecmascript source code failed
+[0m [90m 20 |[39m         [32m"Study of language acquisition"[39m
+ [90m 21 |[39m       ][33m,[39m
+[31m[1m>[22m[39m[90m 22 |[39m       correctAnswer[33m:[39m [35m2[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m
+ [90m    |[39m                        [31m[1m^[22m[39m
+ [90m 23 |[39m     }[33m,[39m
+ [90m 24 |[39m     {
+ [90m 25 |[39m       question[33m:[39m [32m"Which of the following is a key component of phrase structure grammar?"[39m[33m,[39m[0m
+
+Expected unicode escape
+
+Import traces:
+  Client Component Browser:
+    ./LMS/lms/app/pages/ls/units/Unit2.tsx [Client Component Browser]
+    ./LMS/lms/app/pages/ls/page.tsx [Client Component Browser]
+    ./LMS/lms/app/pages/ls/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./LMS/lms/app/pages/ls/units/Unit2.tsx [Client Component SSR]
+    ./LMS/lms/app/pages/ls/page.tsx [Client Component SSR]
+    ./LMS/lms/app/pages/ls/page.tsx [Server Component]
+
+
+./LMS/lms/app/pages/ls/units/Unit3.tsx:13:346
+Parsing ecmascript source code failed
+[0m [90m 11 |[39m [36mconst[39m [33mUnit3[39m[33m:[39m [33mReact[39m[33m.[39m[33mFC[39m[33m<[39m[33mUnit3Props[39m[33m>[39m [33m=[39m ({ currentModule[33m,[39m setCurrentModule[33m,[39m onBack }) [33m=>[39m {
+ [90m 12 |[39m   [36mconst[39m module1Quiz [33m=[39m [
+[31m[1m>[22m[39m[90m 13 |[39m     { question[33m:[39m [32m"What is the critical period hypothesis in language acquisition?"[39m[33m,[39m options[33m:[39m [[32m"Language can only be acquired before puberty"[39m[33m,[39m [32m"Language acquisition happens most efficiently during a specific developmental window"[39m[33m,[39m [32m"Language can only be acquired in early childhood"[39m[33m,[39m [32m"Language acquisition is not time-dependent"[39m][33m,[39m correctAnswer[33m:[39m [35m1[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m
+ [90m    |[39m                                                                                                                                                                                                                                                                                                                                                          [31m[1m^[22m[39m
+ [90m 14 |[39m     { question[33m:[39m [32m"According to Chomsky's theory, what is the Language Acquisition Device (LAD)?"[39m[33m,[39m options[33m:[39m [[32m"A computer program for language learning"[39m[33m,[39m [32m"An innate biological mechanism for language acquisition"[39m[33m,[39m [32m"A teaching methodology"[39m[33m,[39m [32m"A diagnostic tool for language disorders"[39m][33m,[39m correctAnswer[33m:[39m [35m1[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m
+ [90m 15 |[39m     { question[33m:[39m [32m"Which stage of first language acquisition typically occurs between 12-18 months?"[39m[33m,[39m options[33m:[39m [[32m"Babbling stage"[39m[33m,[39m [32m"Two-word stage"[39m[33m,[39m [32m"Telegraphic speech"[39m[33m,[39m [32m"One-word stage (holophrases)"[39m][33m,[39m correctAnswer[33m:[39m [35m3[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m
+ [90m 16 |[39m     { question[33m:[39m [32m"What is meant by Universal Grammar according to generative linguists?"[39m[33m,[39m options[33m:[39m [[32m"A single global language"[39m[33m,[39m [32m"Innate principles and parameters that constrain language structure"[39m[33m,[39m [32m"A teaching methodology for multilingual education"[39m[33m,[39m [32m"A computer translation system"[39m][33m,[39m correctAnswer[33m:[39m [35m1[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m[0m
+
+Expected unicode escape
+
+Import traces:
+  Client Component Browser:
+    ./LMS/lms/app/pages/ls/units/Unit3.tsx [Client Component Browser]
+    ./LMS/lms/app/pages/ls/page.tsx [Client Component Browser]
+    ./LMS/lms/app/pages/ls/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./LMS/lms/app/pages/ls/units/Unit3.tsx [Client Component SSR]
+    ./LMS/lms/app/pages/ls/page.tsx [Client Component SSR]
+    ./LMS/lms/app/pages/ls/page.tsx [Server Component]
+
+
+./LMS/lms/app/pages/ls/units/Unit4.tsx:13:271
+Parsing ecmascript source code failed
+[0m [90m 11 |[39m [36mconst[39m [33mUnit4[39m[33m:[39m [33mReact[39m[33m.[39m[33mFC[39m[33m<[39m[33mUnit4Props[39m[33m>[39m [33m=[39m ({ currentModule[33m,[39m setCurrentModule[33m,[39m onBack }) [33m=>[39m {
+ [90m 12 |[39m   [36mconst[39m module1Quiz [33m=[39m [
+[31m[1m>[22m[39m[90m 13 |[39m     { question[33m:[39m [32m"What is the primary focus of sociolinguistics?"[39m[33m,[39m options[33m:[39m [[32m"The study of language structure"[39m[33m,[39m [32m"The study of the relationship between language and society"[39m[33m,[39m [32m"The study of language acquisition"[39m[33m,[39m [32m"The study of language change over time"[39m][33m,[39m correctAnswer[33m:[39m [35m1[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m
+ [90m    |[39m                                                                                                                                                                                                                                                                               [31m[1m^[22m[39m
+ [90m 14 |[39m     { question[33m:[39m [32m"What is a sociolect?"[39m[33m,[39m options[33m:[39m [[32m"A regional variety of language"[39m[33m,[39m [32m"A social variety of language associated with a particular social group"[39m[33m,[39m [32m"A formal register of language"[39m[33m,[39m [32m"A dead language"[39m][33m,[39m correctAnswer[33m:[39m [35m1[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m
+ [90m 15 |[39m     { question[33m:[39m [32m"What is code-switching?"[39m[33m,[39m options[33m:[39m [[32m"Changing the subject of conversation"[39m[33m,[39m [32m"Alternating between different languages or varieties within a conversation"[39m[33m,[39m [32m"Correcting grammatical errors"[39m[33m,[39m [32m"Using formal language in informal settings"[39m][33m,[39m correctAnswer[33m:[39m [35m1[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m
+ [90m 16 |[39m     { question[33m:[39m [32m"Which demographic factor is NOT typically considered in sociolinguistic studies?"[39m[33m,[39m options[33m:[39m [[32m"Geographic region"[39m[33m,[39m [32m"Social class"[39m[33m,[39m [32m"Hair color"[39m[33m,[39m [32m"Age"[39m][33m,[39m correctAnswer[33m:[39m [35m2[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m[0m
+
+Expected unicode escape
+
+Import traces:
+  Client Component Browser:
+    ./LMS/lms/app/pages/ls/units/Unit4.tsx [Client Component Browser]
+    ./LMS/lms/app/pages/ls/page.tsx [Client Component Browser]
+    ./LMS/lms/app/pages/ls/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./LMS/lms/app/pages/ls/units/Unit4.tsx [Client Component SSR]
+    ./LMS/lms/app/pages/ls/page.tsx [Client Component SSR]
+    ./LMS/lms/app/pages/ls/page.tsx [Server Component]
+
+
+./LMS/lms/app/pages/ls/units/Unit5.tsx:13:249
+Parsing ecmascript source code failed
+[0m [90m 11 |[39m [36mconst[39m [33mUnit5[39m[33m:[39m [33mReact[39m[33m.[39m[33mFC[39m[33m<[39m[33mUnit5Props[39m[33m>[39m [33m=[39m ({ currentModule[33m,[39m setCurrentModule[33m,[39m onBack }) [33m=>[39m {
+ [90m 12 |[39m   [36mconst[39m module1Quiz [33m=[39m [
+[31m[1m>[22m[39m[90m 13 |[39m     { question[33m:[39m [32m"What is the Sapir-Whorf hypothesis primarily concerned with?"[39m[33m,[39m options[33m:[39m [[32m"The relationship between language and thought"[39m[33m,[39m [32m"The origin of human language"[39m[33m,[39m [32m"The structure of sentences"[39m[33m,[39m [32m"The evolution of language"[39m][33m,[39m correctAnswer[33m:[39m [35m0[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m
+ [90m    |[39m                                                                                                                                                                                                                                                         [31m[1m^[22m[39m
+ [90m 14 |[39m     { question[33m:[39m [32m"What does the term 'linguistic relativity' refer to?"[39m[33m,[39m options[33m:[39m [[32m"The idea that language shapes thought and perception"[39m[33m,[39m [32m"The study of language change over time"[39m[33m,[39m [32m"The comparison of different languages"[39m[33m,[39m [32m"The relationship between syntax and semantics"[39m][33m,[39m correctAnswer[33m:[39m [35m0[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m
+ [90m 15 |[39m     { question[33m:[39m [32m"What is linguistic determinism?"[39m[33m,[39m options[33m:[39m [[32m"The idea that thought determines language"[39m[33m,[39m [32m"The idea that language determines thought"[39m[33m,[39m [32m"The process of language learning"[39m[33m,[39m [32m"The evolution of language structure"[39m][33m,[39m correctAnswer[33m:[39m [35m1[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m
+ [90m 16 |[39m     { question[33m:[39m [32m"Which of the following is an example of cultural transmission through language?"[39m[33m,[39m options[33m:[39m [[32m"Learning grammar rules"[39m[33m,[39m [32m"Passing down stories and traditions"[39m[33m,[39m [32m"Pronunciation practice"[39m[33m,[39m [32m"Vocabulary memorization"[39m][33m,[39m correctAnswer[33m:[39m [35m1[39m[33m,[39m[37m[41m[1m\[22m[49m[39mn      explanation[33m:[39m [32m""[39m }[33m,[39m[0m
+
+Expected unicode escape
+
+Import traces:
+  Client Component Browser:
+    ./LMS/lms/app/pages/ls/units/Unit5.tsx [Client Component Browser]
+    ./LMS/lms/app/pages/ls/page.tsx [Client Component Browser]
+    ./LMS/lms/app/pages/ls/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./LMS/lms/app/pages/ls/units/Unit5.tsx [Client Component SSR]
+    ./LMS/lms/app/pages/ls/page.tsx [Client Component SSR]
+    ./LMS/lms/app/pages/ls/page.tsx [Server Component]
+
+
+    at <unknown> (./LMS/lms/app/pages/ls/units/Unit2.tsx:22:24)
+    at <unknown> (./LMS/lms/app/pages/ls/units/Unit3.tsx:13:346)
+    at <unknown> (./LMS/lms/app/pages/ls/units/Unit4.tsx:13:271)
+    at <unknown> (./LMS/lms/app/pages/ls/units/Unit5.tsx:13:249)
