@@ -53,13 +53,23 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 .sidebar {
@@ -262,7 +272,8 @@
   font-size: 1rem;
 }
 
-.content-section ul, .content-section ol {
+.content-section ul,
+.content-section ol {
   line-height: 1.8;
   color: #333333;
   margin: 15px 0;
@@ -543,7 +554,8 @@
   border-top: 3px solid #000000;
 }
 
-.prev-module-btn, .next-module-btn {
+.prev-module-btn,
+.next-module-btn {
   padding: 12px 30px;
   background: #000000;
   color: white;
@@ -555,7 +567,8 @@
   transition: all 0.2s ease;
 }
 
-.prev-module-btn:hover, .next-module-btn:hover {
+.prev-module-btn:hover,
+.next-module-btn:hover {
   background: #333333;
 }
 
