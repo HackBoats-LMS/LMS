@@ -209,7 +209,8 @@ export default function AdminDashboard() {
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-gray-100 flex flex-col p-6 hidden md:flex">
                 <div className="flex items-center gap-2 mb-10 text-[#FF5B5B]">
-                    <span className="text-2xl font-bold">🎓 LMS Admin</span>
+                    <span className="text-2xl font-bold">
+                         LMS Admin</span>
                 </div>
 
                 <nav className="flex-1 space-y-1">
