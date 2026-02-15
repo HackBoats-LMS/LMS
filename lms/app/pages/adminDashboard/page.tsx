@@ -121,7 +121,7 @@ export default function AdminDashboard() {
 
                 // Calculate averages for known subjects
                 Object.entries(SUBJECT_CONFIG).forEach(([key, config]) => {
-                    const subjectData = data.filter((p: any) => p.subject && p.subject.toLowerCase() === key && p.score !== undefined);
+                    const subjectData = data.filter((p: any) => p && p.subject && p.subject.toLowerCase() === key && p.score !== undefined);
                     const totalScore = subjectData.reduce((acc: number, cur: any) => acc + (cur.score || 0), 0);
                     const avgScore = subjectData.length > 0 ? Math.round(totalScore / subjectData.length) : 0;
 
