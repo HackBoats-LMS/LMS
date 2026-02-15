@@ -1,5 +1,8 @@
 import supabase from "@/lib/db";
 import { NextResponse } from "next/server";
+import redis from "@/lib/redis";
+
+const CACHE_TTL = 3600; // 1 hour
 
 export async function POST(req: Request) {
   try {
@@ -16,6 +19,12 @@ export async function POST(req: Request) {
 
     if (error) throw error;
 
+    // Invalidate Cache
+    if (redis) {
+      await redis.del(`modules:${subject}`);
+      await redis.del('modules:all');
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
@@ -26,7 +35,17 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const subject = searchParams.get("subject");
+    const CACHE_KEY = `modules:${subject || 'all'}`;
 
+    // 1. Try Redis Cache
+    if (redis) {
+      const cached = await redis.get(CACHE_KEY);
+      if (cached) {
+        return NextResponse.json({ ok: true, data: JSON.parse(cached), source: 'cache' });
+      }
+    }
+
+    // 2. Fetch from DB
     let query = supabase.from('modules').select('*');
 
     if (subject) {
@@ -37,7 +56,12 @@ export async function GET(req: Request) {
 
     if (error) throw error;
 
-    return NextResponse.json({ ok: true, data: modules || [] });
+    // 3. Set Redis Cache
+    if (redis && modules) {
+      await redis.set(CACHE_KEY, JSON.stringify(modules), 'EX', CACHE_TTL);
+    }
+
+    return NextResponse.json({ ok: true, data: modules || [], source: 'db' });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
