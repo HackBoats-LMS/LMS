@@ -324,7 +324,7 @@ const EventsPage = () => {
                                         {item.link && (
                                             <div className="mt-auto pt-4 border-t border-gray-50">
                                                 <a
-                                                    href={item.link}
+                                                    href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="flex items-center gap-2 text-sm font-semibold text-[#FF5B5B] hover:text-[#e04040] hover:underline"
