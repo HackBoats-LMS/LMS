@@ -35,9 +35,10 @@ export default function AdminLogin() {
     <div className="relative min-h-screen overflow-x-hidden flex flex-col">
       {/* Background */}
       <Image
-        src="/background-opt.webp"
+        src="/images/background2.svg"
         alt="Background"
         fill
+
         className="object-cover object-top -z-1"
         quality={100}
         priority
