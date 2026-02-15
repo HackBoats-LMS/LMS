@@ -79,6 +79,30 @@ REDIS_URL="redis://default:password@host:port"
     2.  **Invalidates** the specific cache key `progress:user@test.com:fswd`.
     3.  **Invalidates** the summary cache key `progress:user@test.com:all`.
 
+### 4. 👥 Student List Caching
+*   **Nature:** Semi-static (new students join occasionally).
+*   **Strategy:** Admin-facing optimization.
+*   **TTL:** 1 Hour (`3600` seconds).
+*   **Key:** `students:all`.
+
+**Workflow:**
+*   **GET `/api/users/students`**: Checks Redis key `students:all`.
+    *   ✅ **Hit**: Returns cached list of all students (Source: `cache`).
+    *   ❌ **Miss**: Queries Supabase for all users, caches result, returns data (Source: `db`).
+
+### 5. 📚 Modules Caching
+*   **Nature:** Static content (course material).
+*   **Strategy:** Subject-based Partitioning.
+*   **TTL:** 1 Hour (`3600` seconds).
+*   **Keys:** `modules:all`, `modules:{subject}`.
+
+**Workflow:**
+*   **GET `/api/modules`**: checks specific `modules:{subject}` or general `modules:all` key.
+*   **POST `/api/modules` (Create)**:
+    1.  Writes new module to Supabase.
+    2.  **Invalidates** `modules:{subject}` cache.
+    3.  **Invalidates** `modules:all` cache to reflect new content globally.
+
 ---
 
 ## 📊 Performance Impact

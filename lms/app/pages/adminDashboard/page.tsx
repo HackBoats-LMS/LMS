@@ -116,7 +116,7 @@ export default function AdminDashboard() {
             const response = await res.json();
 
             if (response.success && Array.isArray(response.data)) {
-                const data = response.data;
+                const data = response.data.filter((p: any) => p && p.subject);
                 const stats: any[] = [];
 
                 // Calculate averages for known subjects

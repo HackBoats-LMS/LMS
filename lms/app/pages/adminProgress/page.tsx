@@ -77,7 +77,8 @@ export default function AdminProgress() {
             console.log('moduleId type:', typeof data.data[0].moduleId, 'value:', data.data[0].moduleId);
         }
         if (data.success) {
-            setProgress(data.data);
+            const validData = Array.isArray(data.data) ? data.data.filter((p: any) => p && p.subject) : [];
+            setProgress(validData);
         }
     };
 

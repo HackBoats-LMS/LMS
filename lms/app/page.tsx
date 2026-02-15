@@ -272,7 +272,7 @@ const StudentDashboard = () => {
     const TOTAL_QUIZZES = TOTAL_LESSONS; // Assuming 1 quiz per lesson/module
 
     // Calculated from data
-    const lessonsCompleted = data.filter(p => p.completed).length;
+    const lessonsCompleted = data.filter(p => p && p.completed).length;
 
     let fullyCompletedUnits = 0;
 
@@ -347,7 +347,7 @@ const StudentDashboard = () => {
 
 
     // Quizzes Count
-    const quizzesCompleted = data.filter(p => p.score > 0).length;
+    const quizzesCompleted = data.filter(p => p && p.score > 0).length;
 
     setStats([
       {
@@ -405,7 +405,7 @@ const StudentDashboard = () => {
   };
 
   const selectedSchedule = getScheduleForDate(selectedDate);
-  const upcomingClass = getScheduleForDate(new Date()).find(s => s.subject);
+  const upcomingClass = getScheduleForDate(new Date()).find(s => s && s.subject);
 
   return (
     <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
@@ -558,8 +558,8 @@ const StudentDashboard = () => {
                                     display: none;
                                 }
                             `}</style>
-              {selectedSchedule.filter(s => s.subject).length > 0 ? (
-                selectedSchedule.filter(s => s.subject).map((slot, idx) => (
+              {selectedSchedule.filter(s => s && s.subject).length > 0 ? (
+                selectedSchedule.filter(s => s && s.subject).map((slot, idx) => (
                   <div key={idx} className="p-3 border border-gray-100 rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-1">
                       <span className="text-xs font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded text-[10px]">{slot.time}</span>
