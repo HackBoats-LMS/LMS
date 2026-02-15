@@ -243,7 +243,8 @@ const StudentDashboard = () => {
                     title: e.title,
                     status: 'Upcoming',
                     time: e.date ? new Date(e.date).toLocaleDateString() : 'No date',
-                    icon: e.type === 'announcement' ? <Bell className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />
+                    icon: e.type === 'announcement' ? <Bell className="w-5 h-5" /> : <CreditCard className="w-5 h-5" />,
+                    image_url: e.image_url
                 }));
 
                 setEvents(data);
@@ -454,7 +455,7 @@ const StudentDashboard = () => {
                     <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
 
                     <div className="flex items-center gap-6">
-                       
+
 
                         <div className="flex items-center gap-3">
                             <span className="text-sm font-medium text-gray-700 hidden sm:block">{session?.user?.name || "Student"}</span>
@@ -587,16 +588,26 @@ const StudentDashboard = () => {
                         <div className="space-y-3 flex-1 overflow-y-auto pr-1">
                             {activeTasks.map((task) => (
                                 <div key={task.id} className="bg-white p-4 rounded-xl shadow-sm flex items-start gap-4 hover:shadow-md transition-shadow cursor-pointer border border-transparent hover:border-gray-100">
-                                    <div className="p-2 bg-gray-50 rounded-lg text-gray-500">
-                                        {task.icon}
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="text-sm font-bold text-gray-800 mb-1">{task.title}</h4>
+                                    {task.image_url ? (
+                                        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100">
+                                            <img
+                                                src={task.image_url}
+                                                alt={task.title}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="p-3 bg-gray-50 rounded-lg text-gray-500 flex-shrink-0">
+                                            {task.icon}
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="text-sm font-bold text-gray-800 mb-1 truncate">{task.title}</h4>
                                         <div className="flex items-center gap-3">
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${task.status === 'In progress' || task.status === 'Upcoming' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${task.status === 'In progress' || task.status === 'Upcoming' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
                                                 {task.status}
                                             </span>
-                                            <span className="text-[10px] text-red-500 font-medium bg-red-50 px-2 py-0.5 rounded-full">Time left: {task.time}</span>
+                                            <span className="text-[10px] text-red-500 font-medium bg-red-50 px-2 py-0.5 rounded-full whitespace-nowrap">Time left: {task.time}</span>
                                         </div>
                                     </div>
                                 </div>

@@ -25,8 +25,11 @@ import {
     Filter,
     Video,
     Trophy,
-    Coffee
+    Coffee,
+    Upload
 } from "lucide-react";
+
+const STORAGE_BUCKET = 'events';
 
 interface EventItem {
     id: string;
@@ -54,8 +57,12 @@ const EventsPage = () => {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [filterType, setFilterType] = useState('all');
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
     // Form State
+    const [uploading, setUploading] = useState(false);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [dragActive, setDragActive] = useState(false);
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -90,6 +97,46 @@ const EventsPage = () => {
         }
     };
 
+    const uploadImage = async (file: File) => {
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from(STORAGE_BUCKET)
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage
+                .from(STORAGE_BUCKET)
+                .getPublicUrl(filePath);
+
+            return data.publicUrl;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            throw error;
+        }
+    };
+
+    const deleteImage = async (imageUrl: string) => {
+        if (!imageUrl) return;
+        try {
+            const urlParts = imageUrl.split(`/${STORAGE_BUCKET}/`);
+            if (urlParts.length > 1) {
+                const path = urlParts[1];
+                const { error } = await supabase.storage
+                    .from(STORAGE_BUCKET)
+                    .remove([path]);
+
+                if (error) console.error('Error deleting image from storage:', error);
+            }
+        } catch (error) {
+            console.error('Error in deleteImage:', error);
+        }
+    };
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -99,7 +146,14 @@ const EventsPage = () => {
         e.preventDefault();
         if (!formData.title || !formData.description) return;
 
+        setUploading(true);
         try {
+            let finalImageUrl = formData.image_url;
+
+            if (imageFile) {
+                finalImageUrl = await uploadImage(imageFile);
+            }
+
             const { error } = await supabase
                 .from('events')
                 .insert([{
@@ -108,7 +162,7 @@ const EventsPage = () => {
                     type: formData.type,
                     date: formData.date || null,
                     link: formData.link || null,
-                    image_url: formData.image_url || null,
+                    image_url: finalImageUrl || null,
                     created_at: new Date().toISOString()
                 }]);
 
@@ -123,18 +177,27 @@ const EventsPage = () => {
                 link: "",
                 image_url: ""
             });
+            setImageFile(null);
             setIsModalOpen(false);
             // Re-fetch to update list (Note: Cache might delay appearance unless invalidated)
             fetchEvents();
         } catch (err: any) {
             console.error("Error adding event:", err);
             alert(`Failed to add event: ${err.message}`);
+        } finally {
+            setUploading(false);
         }
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this item?")) return;
         try {
+            // Find event to get image url (optional optimization: pass object instead of id)
+            const eventToDelete = events.find(e => e.id === id);
+            if (eventToDelete?.image_url && eventToDelete.image_url.includes(`/${STORAGE_BUCKET}/`)) {
+                await deleteImage(eventToDelete.image_url);
+            }
+
             const { error } = await supabase.from('events').delete().eq('id', id);
             if (error) throw error;
             fetchEvents();
@@ -179,7 +242,7 @@ const EventsPage = () => {
                 </nav>
 
                 <div className="pt-6 border-t border-gray-100 space-y-1">
-                    
+
                     <button
                         onClick={() => signOut({ callbackUrl: "/" })}
                         className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-red-600 w-full"
@@ -249,7 +312,11 @@ const EventsPage = () => {
 
                     {isAdmin && (
                         <button
-                            onClick={() => setIsModalOpen(true)}
+                            onClick={() => {
+                                setFormData({ title: "", description: "", type: "announcement", date: "", link: "", image_url: "" });
+                                setImageFile(null);
+                                setIsModalOpen(true);
+                            }}
                             className="flex items-center gap-2 px-5 py-2.5 bg-[#FF5B5B] text-white rounded-xl hover:bg-[#ff4040] transition-shadow shadow-sm hover:shadow-md font-medium text-sm w-full sm:w-auto justify-center"
                         >
                             <Plus size={18} />
@@ -277,16 +344,20 @@ const EventsPage = () => {
                                 >
                                     {/* Image Header */}
                                     {item.image_url && (
-                                        <div className="h-48 w-full bg-gray-100 relative overflow-hidden">
+                                        <div
+                                            className="h-48 w-full bg-gray-100 relative overflow-hidden cursor-pointer group/image"
+                                            onClick={() => setSelectedImage(item.image_url || '')}
+                                            title="View full image"
+                                        >
                                             <img
                                                 src={item.image_url}
                                                 alt={item.title}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                className="w-full h-full object-cover group-hover/image:scale-105 transition-transform duration-500"
                                                 onError={(e) => {
                                                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=Event';
                                                 }}
                                             />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
                                         </div>
                                     )}
 
@@ -324,7 +395,7 @@ const EventsPage = () => {
                                         {item.link && (
                                             <div className="mt-auto pt-4 border-t border-gray-50">
                                                 <a
-                                                    href={item.link}
+                                                    href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="flex items-center gap-2 text-sm font-semibold text-[#FF5B5B] hover:text-[#e04040] hover:underline"
@@ -340,6 +411,27 @@ const EventsPage = () => {
                     </div>
                 )}
             </main>
+
+            {/* Image Full Screen Modal */}
+            {selectedImage && (
+                <div
+                    className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer animate-in fade-in duration-200"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <button
+                        onClick={() => setSelectedImage(null)}
+                        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors bg-white/10 p-2 rounded-full backdrop-blur-md z-50"
+                    >
+                        <X size={24} />
+                    </button>
+                    <img
+                        src={selectedImage}
+                        alt="Full View"
+                        className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
 
             {/* Admin Modal */}
             {isModalOpen && (
@@ -429,15 +521,50 @@ const EventsPage = () => {
                                         placeholder="External link URL"
                                     />
                                 </div>
-                                <div className="relative group">
-                                    <ImageIcon className="absolute left-4 top-3 text-gray-400 group-focus-within:text-[#FF5B5B] transition-colors" size={16} />
-                                    <input
-                                        name="image_url"
-                                        value={formData.image_url}
-                                        onChange={handleInputChange}
-                                        className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF5B5B]/20 focus:border-[#FF5B5B] transition-all text-sm placeholder:text-gray-300 font-medium"
-                                        placeholder="Image banner URL"
-                                    />
+                                <div className="border border-gray-200 rounded-lg p-3">
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Event Image</label>
+
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className={`relative flex-1 cursor-pointer transition border border-dashed rounded-lg px-4 py-3 flex flex-col items-center justify-center gap-1 ${dragActive ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-gray-50 hover:bg-gray-100 border-gray-300 text-gray-600'}`}
+                                            onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
+                                            onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); }}
+                                            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setDragActive(false);
+                                                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                                    setImageFile(e.dataTransfer.files[0]);
+                                                }
+                                            }}
+                                        >
+                                            <Upload size={16} />
+                                            <span className="text-xs font-medium">{imageFile ? imageFile.name : (dragActive ? "Drop image here" : "Click or Drag to upload")}</span>
+                                            <label className="absolute inset-0 cursor-pointer w-full h-full opacity-0">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={(e) => {
+                                                        if (e.target.files && e.target.files[0]) {
+                                                            setImageFile(e.target.files[0]);
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+                                        {imageFile && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setImageFile(null)}
+                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg relative z-10"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1">Supported formats: JPG, PNG, WEBP</p>
                                 </div>
                             </div>
 
@@ -451,9 +578,10 @@ const EventsPage = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-6 py-2.5 text-sm font-bold text-white bg-[#FF5B5B] hover:bg-[#ff4040] rounded-xl shadow-lg shadow-[#FF5B5B]/20 hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+                                    disabled={uploading}
+                                    className="px-6 py-2.5 text-sm font-bold text-white bg-[#FF5B5B] hover:bg-[#ff4040] rounded-xl shadow-lg shadow-[#FF5B5B]/20 hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
                                 >
-                                    Post It
+                                    {uploading ? "Uploading..." : "Post It"}
                                 </button>
                             </div>
                         </form>
