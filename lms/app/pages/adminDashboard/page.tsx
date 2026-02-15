@@ -210,19 +210,30 @@ export default function AdminDashboard() {
             <aside className="w-64 bg-white border-r border-gray-100 flex flex-col p-6 hidden md:flex">
                 <div className="flex items-center gap-2 mb-10 text-[#FF5B5B]">
                     <span className="text-2xl font-bold">
-                         LMS Admin</span>
+                        LMS Admin</span>
                 </div>
 
                 <nav className="flex-1 space-y-1">
                     {sidebarItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => handleNavigation(item)}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors w-full text-left ${activeTab === item.id ? 'bg-[#FFF0F0] text-[#FF5B5B]' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
-                        >
-                            <span className={activeTab === item.id ? "text-[#FF5B5B]" : "text-gray-400"}>{item.icon}</span>
-                            {item.name}
-                        </button>
+                        item.link ? (
+                            <Link
+                                key={item.id}
+                                href={item.link}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors w-full text-left ${activeTab === item.id ? 'bg-[#FFF0F0] text-[#FF5B5B]' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+                            >
+                                <span className={activeTab === item.id ? "text-[#FF5B5B]" : "text-gray-400"}>{item.icon}</span>
+                                {item.name}
+                            </Link>
+                        ) : (
+                            <button
+                                key={item.id}
+                                onClick={() => handleNavigation(item)}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors w-full text-left ${activeTab === item.id ? 'bg-[#FFF0F0] text-[#FF5B5B]' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+                            >
+                                <span className={activeTab === item.id ? "text-[#FF5B5B]" : "text-gray-400"}>{item.icon}</span>
+                                {item.name}
+                            </button>
+                        )
                     ))}
                 </nav>
 
@@ -469,7 +480,7 @@ export default function AdminDashboard() {
                     </>
                 ) : (
                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[500px]">
-                        {activeTab === "courses" && <div />}
+
                         {activeTab === "events" && <Events onBack={() => setActiveTab("dashboard")} />}
                         {activeTab === "users" && <ManageUsers onBack={() => setActiveTab("dashboard")} />}
                         {activeTab === "timetable" && <Timetable onBack={() => setActiveTab("dashboard")} />}
