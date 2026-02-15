@@ -35,34 +35,35 @@ export default function AdminLogin() {
     <div className="relative min-h-screen overflow-x-hidden flex flex-col">
       {/* Background */}
       <Image
-        src="/background.png"
+        src="/background-opt.webp"
         alt="Background"
         fill
         className="object-cover object-top -z-1"
+        quality={100}
         priority
       />
 
       <nav className="absolute top-0 left-0 w-full z-10 flex justify-between items-center p-6 px-30">
-                  <div className="text-white text-2xl font-bold tracking-wider">
-                      <Image
-                          src={"https://www.hackboats.com/images/logo.png"}
-                          alt="Logo"
-                          width={170}
-                          height={170}
-                          className='w-44 h-auto'
-                      />
-                  </div>
-                  <div className="flex gap-4">
-                      <button className="bg-[#E65D25] text-white font-monument px-2 py-2 rounded-full font-medium flex justify-center items-center gap-2 hover:cursor-pointer"
-                      onClick={()=>router.push("/pages/login")}
-                      >
-                          <span className='px-3'>Student</span>
-                          <div className="w-8 h-8 bg-white rounded-full flex justify-center items-center">
-                              <ArrowRight className='text-black' />
-                          </div>
-                      </button>
-                  </div>
-              </nav>
+        <div className="text-white text-2xl font-bold tracking-wider">
+          <Image
+            src={"https://www.hackboats.com/images/logo.png"}
+            alt="Logo"
+            width={170}
+            height={170}
+            className='w-44 h-auto'
+          />
+        </div>
+        <div className="flex gap-4">
+          <button className="bg-[#E65D25] text-white font-monument px-2 py-2 rounded-full font-medium flex justify-center items-center gap-2 hover:cursor-pointer"
+            onClick={() => router.push("/pages/login")}
+          >
+            <span className='px-3'>Student</span>
+            <div className="w-8 h-8 bg-white rounded-full flex justify-center items-center">
+              <ArrowRight className='text-black' />
+            </div>
+          </button>
+        </div>
+      </nav>
 
       <div className="flex-1 flex items-center justify-center px-4 pt-20">
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 p-8 rounded-2xl shadow-xl w-full max-w-md">

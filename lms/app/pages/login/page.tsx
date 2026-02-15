@@ -12,10 +12,13 @@ const login = () => {
 
       {/* Background */}
       <Image
-        src="/background.png"
+        src="/images/background1.webp"
         alt="Background"
         fill
+        placeholder="blur"
+        blurDataURL="/background-opt.webp"
         className="object-cover object-top -z-1"
+        quality={100} // Force max visual quality for the user, but file size will still be small due to webp
         priority
       />
 
