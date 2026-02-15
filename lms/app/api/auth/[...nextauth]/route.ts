@@ -25,7 +25,7 @@ const handler = NextAuth({
                     .single();
 
                 if (user && !error) {
-                    return { id: user.id, email: user.email, name: user.fullName };
+                    return { ...user, isAdmin: true };
                 }
                 return null;
             }
@@ -68,25 +68,44 @@ const handler = NextAuth({
                     .eq('isAdmin', true)
                     .single();
 
-                // Default to student if both exist
-                const dbUser = studentUser || adminUser;
+                token.hasStudentRecord = !!studentUser;
+                token.hasAdminRecord = !!adminUser;
 
-                if (dbUser) {
-                    token.isAdmin = dbUser.isAdmin || false;
-                    token.id = dbUser.id;
-                    token.email = dbUser.email;
-                    token.hasAdminRecord = !!adminUser;
-                    token.hasStudentRecord = !!studentUser;
+                // Set default ID
+                token.id = studentUser?.id || adminUser?.id || user.id;
+
+                // Determine session role
+                if ((user as any).isAdmin) {
+                    // 1. Explicit Admin Credentials Login
+                    token.isAdmin = true;
+                    token.id = user.id;
+                } else {
+                    // 2. Google Login or other providers
+                    // If only admin record exists, treat as admin
+                    if (adminUser && !studentUser) {
+                        token.isAdmin = true;
+                        token.id = adminUser.id;
+                    } else {
+                        // Default to student
+                        token.isAdmin = false;
+                        if (studentUser) {
+                            token.id = studentUser.id;
+                        }
+                    }
                 }
 
-                // Create student record if doesn't exist
+                // Create student record if doesn't exist AND no admin record exists
                 if (!studentUser && !adminUser) {
-                    await supabase.from('users').insert({
+                    const { data: newUser } = await supabase.from('users').insert({
                         email: user.email,
                         fullName: user.name || "",
                         isAdmin: false,
                         currentSemester: 1
-                    });
+                    }).select().single();
+
+                    if (newUser) {
+                        token.id = newUser.id;
+                    }
                 }
             }
             return token;
@@ -94,10 +113,14 @@ const handler = NextAuth({
 
         async session({ session, token }) {
             if (token) {
-                session.user.id = token.id;
-                session.user.isAdmin = token.isAdmin;
-                session.user.hasAdminRecord = token.hasAdminRecord;
-                session.user.hasStudentRecord = token.hasStudentRecord;
+                // Ensure session properties are correctly typed and populated
+                session.user = {
+                    ...session.user,
+                    id: token.id as string,
+                    isAdmin: token.isAdmin as boolean,
+                    hasAdminRecord: token.hasAdminRecord as boolean,
+                    hasStudentRecord: token.hasStudentRecord as boolean
+                };
             }
             return session;
         },
