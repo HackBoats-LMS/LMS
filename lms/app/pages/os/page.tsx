@@ -30,13 +30,12 @@ function OperatingSystemsContent() {
     router.push('/pages/os');
   };
 
-  const renderContent = () => {
-    if (!selectedModule) {
-      return <CourseOverview onModuleSelect={handleModuleSelect} />;
-    }
+  if (!selectedModule) {
+    return <CourseOverview onModuleSelect={handleModuleSelect} />;
+  }
 
+  const renderUnit = () => {
     const [unitId, moduleId] = selectedModule.split('.').map(Number);
-
     switch (unitId) {
       case 1:
         return <Unit1 currentModule={moduleId} setCurrentModule={(m) => handleModuleSelect(1, m)} onBack={handleBackToOverview} />;
@@ -49,37 +48,33 @@ function OperatingSystemsContent() {
       case 5:
         return <Unit5 currentModule={moduleId} setCurrentModule={(m) => handleModuleSelect(5, m)} onBack={handleBackToOverview} />;
       default:
-        return <CourseOverview onModuleSelect={handleModuleSelect} />;
+        return <div>Module not found</div>;
     }
   };
 
   return (
     <div className="flex">
       <div className="os-container flex-1">
-      {selectedModule && (
-        <>
-          <button 
-            className={`burger-menu ${isSidebarOpen ? 'hidden' : ''}`} 
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-          
-          <Sidebar 
-            selectedModule={selectedModule}
-            onModuleSelect={handleModuleSelect}
-            isOpen={isSidebarOpen}
-            onClose={() => setIsSidebarOpen(false)}
-          />
-        </>
-      )}
-      
-      <main className={`os-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-        {renderContent()}
-      </main>
-    </div>
+        <button
+          className={`burger-menu ${isSidebarOpen ? 'hidden' : ''}`}
+          onClick={() => setIsSidebarOpen(true)}
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <Sidebar
+          selectedModule={selectedModule}
+          onModuleSelect={handleModuleSelect}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+
+        <main className={`os-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+          {renderUnit()}
+        </main>
+      </div>
     </div>
   );
 };
