@@ -2,6 +2,7 @@ import React from 'react'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 const Navbar = () => {
     const router = useRouter()
     return (
@@ -15,16 +16,14 @@ const Navbar = () => {
                     className='w-44 h-auto'
                 />
             </div>
-            <div className="flex gap-4">
-                <button className="bg-[#E65D25] text-white font-monument px-2 py-2 rounded-full font-medium flex justify-center items-center gap-2 hover:cursor-pointer"
-                onClick={()=>router.push("/pages/adminLogin")}
-                >
-                    <span className='px-3'>Admin</span>
-                    <div className="w-8 h-8 bg-white rounded-full flex justify-center items-center">
-                        <ArrowRight className='text-black' />
-                    </div>
-                </button>
-            </div>
+            <button className="bg-[#E65D25] text-white font-monument px-2 py-2 rounded-full font-medium flex justify-center items-center gap-2 hover:cursor-pointer"
+                onClick={() => signIn("google", { callbackUrl: "/?student=true" })}
+            >
+                <span className='px-3'>Login</span>
+                <div className="w-8 h-8 bg-white rounded-full flex justify-center items-center">
+                    <ArrowRight className='text-black' />
+                </div>
+            </button>
         </nav>
     )
 }

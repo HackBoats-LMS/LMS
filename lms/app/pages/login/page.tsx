@@ -16,7 +16,6 @@ const login = () => {
         alt="Background"
         fill
         className="object-cover object-top -z-1"
-        quality={100} // Force max visual quality for the user, but file size will still be small due to webp
         priority
       />
 

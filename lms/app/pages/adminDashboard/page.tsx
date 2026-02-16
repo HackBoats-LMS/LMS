@@ -239,7 +239,13 @@ export default function AdminDashboard() {
 
                 <div className="pt-6 border-t border-gray-100 space-y-1">
                     <button
-                        onClick={() => signOut({ callbackUrl: "/pages/adminLogin" })}
+                        onClick={() => {
+                            localStorage.removeItem('lms_timetable');
+                            localStorage.removeItem('lms_events');
+                            localStorage.removeItem('lms_progress');
+                            localStorage.removeItem('students:all');
+                            signOut({ callbackUrl: "/pages/adminLogin" });
+                        }}
                         className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-red-600 w-full"
                     >
                         <LogOut size={20} className="text-gray-400" />
