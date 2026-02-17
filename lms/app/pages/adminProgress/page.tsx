@@ -14,7 +14,7 @@ export default function AdminProgress() {
     const [loading, setLoading] = useState(true);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
 
-    const courseStructure: any = {
+    const [courseStructure, setCourseStructure] = useState<any>({
         OS: {
             name: "Operating Systems",
             color: "#8B5CF6",
@@ -34,7 +34,7 @@ export default function AdminProgress() {
                 { id: 2, name: "Deploying Frontend", modules: ["Deploying Frontend - Introduction", "Deploying Frontend - Deep-dive #1 (Vercel)", "Deploying Frontend - Deep-dive #2 (Netlify)", "Practice Assignment #1", "Practice Assignment #2", "Follow-along Milestone #17", "Follow-along Milestone #18", "ASAP Project - Deploy", "Knowledge Review #6"] }
             ]
         }
-    };
+    });
 
     useEffect(() => {
         if (session === null) return;
@@ -44,8 +44,40 @@ export default function AdminProgress() {
         }
         if (session) {
             fetchStudents();
+            fetchDynamicSubjects();
         }
     }, [session]);
+
+    const fetchDynamicSubjects = async () => {
+        try {
+            const res = await fetch("/api/subjects");
+            const data = await res.json();
+            if (data.success && Array.isArray(data.data)) {
+                setCourseStructure((prev: any) => {
+                    const newStructure = { ...prev };
+                    data.data.forEach((sub: any) => {
+                        // Skip if already exists (e.g. static ones)
+                        if (newStructure[sub.name]) return;
+
+                        newStructure[sub.name] = {
+                            name: sub.name,
+                            color: "#10B981", // Default green for dynamic
+                            units: [
+                                {
+                                    id: 1,
+                                    name: sub.template || "Course Modules",
+                                    modules: sub.modules.map((m: any) => m.name)
+                                }
+                            ]
+                        };
+                    });
+                    return newStructure;
+                });
+            }
+        } catch (error) {
+            console.error("Failed to fetch dynamic subjects", error);
+        }
+    };
 
     const fetchStudents = async () => {
         const res = await fetch("/api/users/students");

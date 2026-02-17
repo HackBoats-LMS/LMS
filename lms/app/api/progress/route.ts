@@ -9,7 +9,7 @@ const getCacheKey = (email: string, subject: string | null) =>
 
 export async function POST(req: NextRequest) {
   try {
-    const { userEmail, subject, unitId, moduleId, score, totalQuestions, completed } = await req.json();
+    const { userEmail, subject, unitId, moduleId, score, totalQuestions, completed, moduleName: providedModuleName } = await req.json();
 
     // Ensure unitId and moduleId are integers
     const unitIdInt = parseInt(String(unitId), 10);
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     console.log('POST /api/progress received:', { userEmail, subject, unitId: unitIdInt, moduleId: moduleIdInt, score, totalQuestions });
 
-    const moduleName = getModuleName(subject, unitIdInt, moduleIdInt);
+    const moduleName = providedModuleName || getModuleName(subject, unitIdInt, moduleIdInt);
     const percentage = Math.round((score / totalQuestions) * 100);
     const isCompleted = completed || percentage >= 60;
     const now = new Date().toISOString();

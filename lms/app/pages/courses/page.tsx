@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import {
@@ -12,16 +12,33 @@ import {
   Award,
   LayoutDashboard,
   CreditCard,
-  Settings,
   ChevronRight,
-  PlayCircle,
   CheckCircle2
 } from "lucide-react";
 
+interface Course {
+  id: string | number;
+  name: string;
+  code: string;
+  link: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+  textColor: string;
+  progressColor: string;
+  btnColor: string;
+  credits: number;
+  modules: number;
+  progress: number;
+}
+
 const CoursesPage = () => {
   const { data: session } = useSession();
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const courses = [
+  // Static Courses
+  const staticCourses: Course[] = [
     {
       id: 1,
       name: "Full Stack Web Development",
@@ -54,6 +71,82 @@ const CoursesPage = () => {
     }
   ];
 
+  useEffect(() => {
+    const fetchCoursesAndProgress = async () => {
+      if (!session?.user?.email) return;
+
+      try {
+        setLoading(true);
+
+        // 1. Fetch Subjects
+        const subjectsRes = await fetch('/api/subjects');
+        const subjectsData = await subjectsRes.json();
+
+        // 2. Fetch User Progress
+        const progressRes = await fetch(`/api/progress?userEmail=${session.user.email}`);
+        const progressData = await progressRes.json();
+        const userProgress = progressData.success ? progressData.data : [];
+
+        if (subjectsData.success && Array.isArray(subjectsData.data)) {
+          const dbCourses: Course[] = subjectsData.data.map((subject: any) => {
+            // Calculate Progress
+            const totalModules = subject.modules.length;
+            const completedCount = userProgress.filter((p: any) =>
+              p.subject === subject.name && (p.completed || p.percentage >= 60)
+            ).length;
+
+            // Ensure progress doesn't exceed 100% and handle division by zero
+            const progress = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
+
+            return {
+              id: subject._id,
+              name: subject.name,
+              code: subject.template?.substring(0, 4).toUpperCase() || "SUBJ",
+              link: `/pages/courses/${subject._id}`,
+              description: subject.modules.length > 0 ? subject.modules[0].description : "No description available.",
+              icon: <BookOpen className="w-6 h-6 text-green-600" />,
+              color: "bg-green-50 border-green-100",
+              textColor: "text-green-600",
+              progressColor: "bg-green-500", // Dynamic visual
+              btnColor: "bg-green-50 text-green-600 hover:bg-green-100",
+              credits: 3,
+              modules: totalModules,
+              progress: progress
+            };
+          });
+
+          // Also update static courses progress if available (optional, but consistent)
+          const updatedStaticCourses = staticCourses.map(course => {
+            // For FSWD and OS, we might want to calculate real progress too if we had the total module count dynamic.
+            // For now, I'll calculate it based on the hardcoded module count in staticCourses if I can match the subject name.
+            // course.name in staticCourses is "Full Stack Web Development" which might match "FSWD" subject in DB progress?
+            // The progress entries use 'FSWD' and 'OS' as subject names usually.
+            const subjectKey = course.code; // 'FSWD' or 'OS'
+            const totalModules = course.modules;
+            const completedCount = userProgress.filter((p: any) =>
+              p.subject === subjectKey && (p.completed || p.percentage >= 60)
+            ).length;
+            return {
+              ...course,
+              progress: totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : course.progress
+            };
+          });
+
+          setAllCourses([...updatedStaticCourses, ...dbCourses]);
+        } else {
+          setAllCourses(staticCourses);
+        }
+      } catch (error) {
+        console.error("Failed to fetch courses or progress", error);
+        setAllCourses(staticCourses);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCoursesAndProgress();
+  }, [session]);
+
   return (
     <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
       {/* Sidebar */}
@@ -84,7 +177,6 @@ const CoursesPage = () => {
         </nav>
 
         <div className="pt-6 border-t border-gray-100 space-y-1">
-          
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-red-600 w-full"
@@ -134,62 +226,66 @@ const CoursesPage = () => {
 
         {/* Courses Grid - Scrollable Container */}
         <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => (
-              <div key={course.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col h-full min-h-[300px]">
-                <div className="flex justify-between items-start mb-4">
-                  <div className={`p-3 rounded-xl ${course.color}`}>
-                    {course.icon}
+          {loading ? (
+            <div className="flex justify-center items-center h-40 text-gray-400">Loading courses...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {allCourses.map((course) => (
+                <div key={course.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col h-full min-h-[300px]">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`p-3 rounded-xl ${course.color}`}>
+                      {course.icon}
+                    </div>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${course.color} ${course.textColor}`}>
+                      {course.code}
+                    </span>
                   </div>
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${course.color} ${course.textColor}`}>
-                    {course.code}
-                  </span>
+
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#FF5B5B] transition-colors">
+                    {course.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 leading-relaxed mb-6 line-clamp-2 flex-grow">
+                    {course.description}
+                  </p>
+
+                  <div className="mt-auto space-y-4">
+                    {/* Progress Bar */}
+                    <div>
+                      <div className="flex justify-between text-xs mb-1.5 font-medium">
+                        <span className="text-gray-500">Progress</span>
+                        <span className={course.textColor}>{course.progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${course.progressColor} transition-all duration-500`}
+                          style={{ width: `${course.progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Metadata */}
+                    <div className="flex items-center gap-4 text-xs text-gray-400 border-t border-gray-50 pt-3">
+                      <div className="flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5" />
+                        <span>{course.credits} Credits</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{course.modules} Modules</span>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={course.link}
+                      className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${course.btnColor}`}
+                    >
+                      Continue Learning <ChevronRight className="w-4 h-4" />
+                    </Link>
+                  </div>
                 </div>
-
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#FF5B5B] transition-colors">
-                  {course.name}
-                </h3>
-                <p className="text-sm text-gray-500 leading-relaxed mb-6 line-clamp-2 flex-grow">
-                  {course.description}
-                </p>
-
-                <div className="mt-auto space-y-4">
-                  {/* Progress Bar */}
-                  <div>
-                    <div className="flex justify-between text-xs mb-1.5 font-medium">
-                      <span className="text-gray-500">Progress</span>
-                      <span className={course.textColor}>{course.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${course.progressColor} transition-all duration-500`}
-                        style={{ width: `${course.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Metadata */}
-                  <div className="flex items-center gap-4 text-xs text-gray-400 border-t border-gray-50 pt-3">
-                    <div className="flex items-center gap-1.5">
-                      <Award className="w-3.5 h-3.5" />
-                      <span>{course.credits} Credits</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{course.modules} Modules</span>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={course.link}
-                    className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${course.btnColor}`}
-                  >
-                    Continue Learning <ChevronRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
