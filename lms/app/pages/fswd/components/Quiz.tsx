@@ -6,7 +6,7 @@ interface Question {
   question: string;
   options: string[];
   correctAnswer: number;
-  explanation: string;
+  explanation?: string;
 }
 
 interface QuizProps {
@@ -15,10 +15,11 @@ interface QuizProps {
   subject: string;
   unitId: number;
   moduleId: number;
+  moduleName?: string;
   isLocked?: boolean;
 }
 
-const Quiz: React.FC<QuizProps> = ({ title, questions, subject, unitId, moduleId, isLocked = false }) => {
+const Quiz: React.FC<QuizProps> = ({ title, questions, subject, unitId, moduleId, moduleName, isLocked = false }) => {
   const { data: session } = useSession();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>(new Array(questions.length).fill(-1));
@@ -137,6 +138,7 @@ const Quiz: React.FC<QuizProps> = ({ title, questions, subject, unitId, moduleId
           subject,
           unitId,
           moduleId,
+          moduleName,
           score: finalScore,
           totalQuestions: questions.length,
           completed: finalScore >= Math.ceil(questions.length * 0.6)

@@ -20,11 +20,13 @@ import {
     CheckCircle2,
     Briefcase,
     TrendingUp,
-    UserPlus
+    UserPlus,
+    PlusCircle
 } from 'lucide-react';
 import ManageUsers from "./components/ManageUsers";
 import Timetable from "./components/Timetable";
 import Events from "./components/Events";
+import AddSubject from "./components/AddSubject";
 
 // --- Types ---
 interface StatsData {
@@ -80,6 +82,7 @@ export default function AdminDashboard() {
         { id: "users", name: "Manage Users", icon: <Users size={20} /> },
         { id: "timetable", name: "Timetable", icon: <Calendar size={20} /> },
         { id: "events", name: "Events", icon: <Megaphone size={20} /> },
+        { id: "addSubject", name: "Manage Subjects", icon: <BookOpen size={20} /> },
         { id: "progress", name: "Student Progress", icon: <BarChart size={20} />, link: "/pages/adminProgress" },
         { id: "courses", name: "Courses", icon: <BookOpen size={20} />, link: "/pages/courses" },
     ];
@@ -112,6 +115,15 @@ export default function AdminDashboard() {
 
     const fetchSubjectPerformance = async () => {
         try {
+            // 1. Fetch Dynamic Subjects
+            const subjectsRes = await fetch("/api/subjects");
+            const subjectsData = await subjectsRes.json();
+            let dynamicSubjects: any[] = [];
+            if (subjectsData.success) {
+                dynamicSubjects = subjectsData.data;
+            }
+
+            // 2. Fetch Progress for ALL
             const res = await fetch("/api/progress?all=true");
             const response = await res.json();
 
@@ -119,24 +131,47 @@ export default function AdminDashboard() {
                 const data = response.data.filter((p: any) => p && p.subject);
                 const stats: any[] = [];
 
-                // Calculate averages for known subjects
-                Object.entries(SUBJECT_CONFIG).forEach(([key, config]) => {
-                    const subjectData = data.filter((p: any) => p && p.subject && p.subject.toLowerCase() === key && p.score !== undefined);
+                // Helper to calculate stats for a subject key/name
+                const calculateStats = (key: string, config: any) => {
+                    // Match subject by key (e.g. 'fswd') or exact name for dynamic ones
+                    const subjectData = data.filter((p: any) =>
+                        p && p.subject && (p.subject.toLowerCase() === key.toLowerCase() || p.subject === config.name) && p.score !== undefined
+                    );
+
                     const totalScore = subjectData.reduce((acc: number, cur: any) => acc + (cur.score || 0), 0);
                     const avgScore = subjectData.length > 0 ? Math.round(totalScore / subjectData.length) : 0;
 
-                    // Include even if 0 data, just to show the card
-                    stats.push({
+                    return {
                         id: key,
                         ...config,
                         avgScore,
                         totalStudents: new Set(subjectData.map((d: any) => d.userEmail)).size
-                    });
+                    };
+                };
+
+                // 3. Process Static Subjects
+                Object.entries(SUBJECT_CONFIG).forEach(([key, config]) => {
+                    stats.push(calculateStats(key, config));
+                });
+
+                // 4. Process Dynamic Subjects
+                dynamicSubjects.forEach((sub: any) => {
+                    // Avoid duplicates if dynamic subject has same name as static (unlikely but safe)
+                    if (SUBJECT_CONFIG[sub.name.toLowerCase()]) return;
+
+                    const config = {
+                        name: sub.name,
+                        title: sub.name, // or sub.template
+                        color: 'text-green-600',
+                        bg: 'bg-green-50',
+                        border: 'border-green-100',
+                        stroke: '#16a34a' // green-600
+                    };
+                    stats.push(calculateStats(sub.name, config));
                 });
 
                 setSubjectStats(stats);
             } else {
-                // Fallback if no data or error
                 setSubjectStats(Object.values(SUBJECT_CONFIG).map(c => ({ ...c, avgScore: 0, totalStudents: 0 })));
             }
         } catch (error) {
@@ -490,6 +525,7 @@ export default function AdminDashboard() {
                         {activeTab === "events" && <Events onBack={() => setActiveTab("dashboard")} />}
                         {activeTab === "users" && <ManageUsers onBack={() => setActiveTab("dashboard")} />}
                         {activeTab === "timetable" && <Timetable onBack={() => setActiveTab("dashboard")} />}
+                        {activeTab === "addSubject" && <AddSubject onBack={() => setActiveTab("dashboard")} />}
                     </div>
                 )}
             </main>
