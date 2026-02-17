@@ -40,71 +40,24 @@ const StudentDashboard = () => {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [progressData, setProgressData] = useState<any[]>([]);
     const [events, setEvents] = useState<any[]>([]);
+    const [allSubjects, setAllSubjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Dynamic Stats State
     const [stats, setStats] = useState([
-        { label: "Units completed", value: "0", subtext: "0 of 7 units", icon: <LayoutDashboard className="w-6 h-6 text-yellow-600" />, color: "bg-yellow-50 border-yellow-100", progressColor: "bg-yellow-500", progress: 0 },
-        { label: "Lessons completed", value: "0", subtext: "0 of 43 lessons", icon: <BookOpen className="w-6 h-6 text-green-600" />, color: "bg-green-50 border-green-100", progressColor: "bg-green-500", progress: 0 },
-        { label: "Quizzes completed", value: "0", subtext: "0 of 43 quizzes", icon: <CheckCircle2 className="w-6 h-6 text-rose-600" />, color: "bg-rose-50 border-rose-100", progressColor: "bg-rose-500", progress: 0 },
+        { label: "Best Performance", value: "0%", subtext: "N/A", icon: <CheckCircle2 className="w-6 h-6 text-green-600" />, color: "bg-green-50 border-green-100", progressColor: "bg-green-500", progress: 0 },
+        { label: "Needs Attention", value: "0%", subtext: "N/A", icon: <LayoutDashboard className="w-6 h-6 text-orange-600" />, color: "bg-orange-50 border-orange-100", progressColor: "bg-orange-500", progress: 0 },
+        { label: "Quizzes completed", value: "0%", subtext: "0 completed", icon: <BookOpen className="w-6 h-6 text-rose-600" />, color: "bg-rose-50 border-rose-100", progressColor: "bg-rose-500", progress: 0 },
     ]);
 
     const [activeTasks, setActiveTasks] = useState<any[]>([]);
 
-    // --- Configuration ---
-    const SUBJECT_CONFIG: { [key: string]: any } = {
-        'fswd': {
-            name: 'FSWD',
-            title: 'Full Stack',
-            units: { 1: 9, 2: 9 },
-            baseColor: 'cyan',
-            color: 'text-cyan-600',
-            bg: 'bg-cyan-50',
-            border: 'border-cyan-100',
-            progressColor: 'bg-cyan-500',
-            stroke: '#0891b2'
-        },
-        'os': {
-            name: 'OS',
-            title: 'Operating Sys',
-            units: { 1: 5, 2: 5, 3: 5, 4: 5, 5: 5 },
-            baseColor: 'purple',
-            color: 'text-purple-600',
-            bg: 'bg-purple-50',
-            border: 'border-purple-100',
-            progressColor: 'bg-purple-500',
-            stroke: '#9333ea'
-        }
-        // Add new subjects here...
-    };
-
     // Course Stats State
-    const [courseStats, setCourseStats] = useState<any[]>(() => {
-        return Object.entries(SUBJECT_CONFIG).map(([key, config]) => ({
-            id: key,
-            name: config.name,
-            title: config.title,
-            completed: 0,
-            incomplete: 100,
-            color: config.color,
-            stroke: config.stroke
-        }));
-    });
+    const [courseStats, setCourseStats] = useState<any[]>([]);
     const [currentSubjectIndex, setCurrentSubjectIndex] = useState(0);
 
     // Avg Score State
-    const [avgScoreStats, setAvgScoreStats] = useState<any[]>(() => {
-        return Object.entries(SUBJECT_CONFIG).map(([key, config]) => ({
-            id: key,
-            name: config.name,
-            title: config.title,
-            score: 0,
-            color: config.color,
-            bg: config.bg,
-            border: config.border,
-            progressColor: config.progressColor
-        }));
-    });
+    const [avgScoreStats, setAvgScoreStats] = useState<any[]>([]);
     const [currentAvgScoreIndex, setCurrentAvgScoreIndex] = useState(0);
 
     const nextSubject = () => {
@@ -167,6 +120,7 @@ const StudentDashboard = () => {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
+            await fetchSubjects();
             await Promise.all([
                 fetchTimetable(),
                 fetchProgress(),
@@ -176,6 +130,18 @@ const StudentDashboard = () => {
             console.error("Error fetching dashboard data:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchSubjects = async () => {
+        try {
+            const res = await fetch("/api/subjects");
+            const data = await res.json();
+            if (data.success) {
+                setAllSubjects(data.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch subjects", error);
         }
     };
 
@@ -258,125 +224,154 @@ const StudentDashboard = () => {
         }
     };
 
-    const calculateStats = (data: any[]) => {
-        // Dynamic Totals Calculation based on SUBJECT_CONFIG
-        let TOTAL_LESSONS = 0;
-        let TOTAL_UNITS = 0;
+    // Trigger stats recalculation when allSubjects are loaded
+    useEffect(() => {
+        if (allSubjects.length > 0 && progressData.length > 0) {
+            calculateStats(progressData, allSubjects);
+        }
+    }, [allSubjects, progressData]);
 
-        Object.values(SUBJECT_CONFIG).forEach((subject: any) => {
-            Object.values(subject.units).forEach((count: any) => {
-                TOTAL_LESSONS += count;
-            });
-            TOTAL_UNITS += Object.keys(subject.units).length;
+    const calculateStats = (data: any[], subjects: any[] = []) => {
+        // Helper to generate colors deterministically
+        const getColor = (index: number) => {
+            const colors = [
+                { base: 'cyan', text: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100', progress: 'bg-cyan-500', stroke: '#0891b2' },
+                { base: 'purple', text: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', progress: 'bg-purple-500', stroke: '#9333ea' },
+                { base: 'orange', text: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', progress: 'bg-orange-500', stroke: '#f97316' },
+                { base: 'blue', text: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', progress: 'bg-blue-500', stroke: '#2563eb' },
+                { base: 'emerald', text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', progress: 'bg-emerald-500', stroke: '#059669' },
+            ];
+            return colors[index % colors.length];
+        };
+
+        const mergedSubjects = subjects.map((sub, idx) => {
+            const colors = getColor(idx);
+            return {
+                key: sub.name,
+                name: sub.name,
+                title: sub.name,
+                moduleCount: sub.modules ? sub.modules.length : 0,
+                modules: sub.modules,
+                color: colors.text,
+                bg: colors.bg,
+                border: colors.border,
+                progressColor: colors.progress,
+                stroke: colors.stroke
+            };
         });
 
-        const TOTAL_QUIZZES = TOTAL_LESSONS; // Assuming 1 quiz per lesson/module
+        // Dynamic Totals Calculation
+        let TOTAL_LESSONS = 0;
+        let TOTAL_QUIZZES = 0;
+
+        mergedSubjects.forEach((subject: any) => {
+            TOTAL_LESSONS += subject.moduleCount;
+            if (subject.modules) {
+                TOTAL_QUIZZES += subject.modules.filter((m: any) => m.quiz).length;
+            }
+        });
+
+        // Filter data to only include records for current subjects
+        const validSubjectNames = mergedSubjects.map((s: any) => s.name);
+        const filteredData = data.filter((p: any) => validSubjectNames.includes(p.subject));
 
         // Calculated from data
-        const lessonsCompleted = data.filter(p => p && p.completed).length;
-
-        let fullyCompletedUnits = 0;
+        const lessonsCompleted = filteredData.filter((p: any) => p && (p.completed || p.score > 0)).length;
+        const quizzesCompleted = filteredData.filter((p: any) => p && p.score > 0).length;
 
         // --- Dynamic Subject Processing ---
         const newCourseStats: any[] = [];
         const newAvgScoreStats: any[] = [];
 
-        Object.entries(SUBJECT_CONFIG).forEach(([subjectKey, config]) => {
-            // 1. Calculate Fully Completed Units
-            let subjectModules = 0;
-            let subjectCompletedModules = 0;
+        // Track scores for Best/Worst calculation
+        const subjectPerformances: { name: string, score: number }[] = [];
 
-            Object.entries(config.units).forEach(([unitId, totalModules]) => {
-                subjectModules += (totalModules as number);
-                const count = (totalModules as number);
+        mergedSubjects.forEach((subject) => {
+            // 1. Calculate Progress
+            let subjectModules = subject.moduleCount;
 
-                const completedInUnit = data.filter(p =>
-                    p.subject &&
-                    p.subject.toLowerCase().includes(subjectKey) &&
-                    p.unitId === parseInt(unitId) &&
-                    p.completed
-                ).length;
-
-                if (completedInUnit >= count) {
-                    fullyCompletedUnits++;
-                }
-
-                if (completedInUnit) subjectCompletedModules += completedInUnit; // Approximate
-            });
-
-            // Correct calculation for subject completion %
-            // We need to count exact completed modules for the subject from data
             const actualSubjectCompleted = data.filter(p =>
-                p.subject && p.subject.toLowerCase().includes(subjectKey) && p.completed
+                p.subject === subject.name && (p.completed || p.percentage >= 60)
             ).length;
 
-            const subjectPerc = Math.round((actualSubjectCompleted / subjectModules) * 100) || 0;
+            const subjectPerc = subjectModules > 0 ? Math.round((actualSubjectCompleted / subjectModules) * 100) : 0;
 
             newCourseStats.push({
-                id: subjectKey,
-                name: config.name,
-                title: config.title,
+                id: subject.key,
+                name: subject.name,
+                title: subject.title,
                 completed: subjectPerc,
                 incomplete: Math.max(0, 100 - subjectPerc),
-                color: config.color,
-                stroke: config.stroke
+                color: subject.color,
+                stroke: subject.stroke
             });
 
             // 2. Calculate Average Score
             const subjectScores = data
-                .filter(p => p.subject && p.subject.toLowerCase().includes(subjectKey) && p.score > 0)
+                .filter(p => p.subject === subject.name && p.score > 0)
                 .map(p => p.score);
 
             const avgScore = subjectScores.length > 0
                 ? Math.round(subjectScores.reduce((a: number, b: number) => a + b, 0) / subjectScores.length)
                 : 0;
 
+            if (subjectScores.length > 0) {
+                subjectPerformances.push({ name: subject.name, score: avgScore });
+            }
+
             newAvgScoreStats.push({
-                id: subjectKey,
-                name: config.name,
-                title: config.title,
+                id: subject.key,
+                name: subject.name,
+                title: subject.title,
                 score: avgScore,
-                color: config.color,
-                bg: config.bg,
-                border: config.border,
-                progressColor: config.progressColor
+                color: subject.color,
+                bg: subject.bg,
+                border: subject.border,
+                progressColor: subject.progressColor
             });
         });
 
         setCourseStats(newCourseStats);
         setAvgScoreStats(newAvgScoreStats);
 
+        // Calculate Best and Worst
+        let bestSubject = { name: "N/A", score: 0 };
+        let worstSubject = { name: "N/A", score: 0 };
 
-        // Quizzes Count
-        const quizzesCompleted = data.filter(p => p && p.score > 0).length;
+        if (subjectPerformances.length > 0) {
+            // Sort descending
+            subjectPerformances.sort((a, b) => b.score - a.score);
+            bestSubject = subjectPerformances[0];
+            worstSubject = subjectPerformances[subjectPerformances.length - 1];
+        }
 
         setStats([
             {
-                label: "Units completed",
-                value: `${Math.round((fullyCompletedUnits / TOTAL_UNITS) * 100)}%`,
-                subtext: `${fullyCompletedUnits} of ${TOTAL_UNITS} units`,
-                icon: <LayoutDashboard className="w-6 h-6 text-yellow-600" />,
-                color: "bg-yellow-50 border-yellow-100",
-                progressColor: "bg-yellow-500",
-                progress: (fullyCompletedUnits / TOTAL_UNITS) * 100
-            },
-            {
-                label: "Lessons completed",
-                value: `${Math.round((lessonsCompleted / TOTAL_LESSONS) * 100)}%`,
-                subtext: `${lessonsCompleted} of ${TOTAL_LESSONS} lessons`,
-                icon: <BookOpen className="w-6 h-6 text-green-600" />,
+                label: "Best Performance",
+                value: `${bestSubject.score}%`,
+                subtext: bestSubject.name,
+                icon: <CheckCircle2 className="w-6 h-6 text-green-600" />,
                 color: "bg-green-50 border-green-100",
                 progressColor: "bg-green-500",
-                progress: (lessonsCompleted / TOTAL_LESSONS) * 100
+                progress: bestSubject.score
+            },
+            {
+                label: "Needs Attention",
+                value: `${worstSubject.score}%`,
+                subtext: worstSubject.name,
+                icon: <LayoutDashboard className="w-6 h-6 text-orange-600" />,
+                color: "bg-orange-50 border-orange-100",
+                progressColor: "bg-orange-500",
+                progress: worstSubject.score
             },
             {
                 label: "Quizzes completed",
-                value: `${Math.round((quizzesCompleted / TOTAL_QUIZZES) * 100)}%`,
+                value: TOTAL_QUIZZES > 0 ? `${Math.round((quizzesCompleted / TOTAL_QUIZZES) * 100)}%` : "0%",
                 subtext: `${quizzesCompleted} of ${TOTAL_QUIZZES} quizzes`,
-                icon: <CheckCircle2 className="w-6 h-6 text-rose-600" />,
+                icon: <BookOpen className="w-6 h-6 text-rose-600" />,
                 color: "bg-rose-50 border-rose-100",
                 progressColor: "bg-rose-500",
-                progress: (quizzesCompleted / TOTAL_QUIZZES) * 100
+                progress: TOTAL_QUIZZES > 0 ? (quizzesCompleted / TOTAL_QUIZZES) * 100 : 0
             },
         ]);
     };
@@ -493,35 +488,41 @@ const StudentDashboard = () => {
                     ))}
 
                     {/* Average Score Card with Navigation */}
-                    <div className={`p-5 rounded-2xl border ${avgScoreStats[currentAvgScoreIndex].border} ${avgScoreStats[currentAvgScoreIndex].bg} shadow-sm hover:shadow-md transition-shadow relative overflow-hidden`}>
-                        <div className="flex justify-between items-start mb-4 relative z-10 w-full">
-                            <div>
-                                <p className="text-sm font-medium text-gray-600 mb-1">Avg Score ({avgScoreStats[currentAvgScoreIndex].name})</p>
-                                <h3 className={`text-2xl font-bold ${avgScoreStats[currentAvgScoreIndex].color}`}>{avgScoreStats[currentAvgScoreIndex].score}%</h3>
-                            </div>
+                    {avgScoreStats.length > 0 ? (
+                        <div className={`p-5 rounded-2xl border ${avgScoreStats[currentAvgScoreIndex].border} ${avgScoreStats[currentAvgScoreIndex].bg} shadow-sm hover:shadow-md transition-shadow relative overflow-hidden`}>
+                            <div className="flex justify-between items-start mb-4 relative z-10 w-full">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600 mb-1">Avg Score ({avgScoreStats[currentAvgScoreIndex].name})</p>
+                                    <h3 className={`text-2xl font-bold ${avgScoreStats[currentAvgScoreIndex].color}`}>{avgScoreStats[currentAvgScoreIndex].score}%</h3>
+                                </div>
 
-                            <div className="flex items-center gap-1 z-20">
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); prevAvgScore(); }}
-                                    className="p-1 rounded-full bg-white/50 hover:bg-white text-gray-500 hover:text-gray-700 transition shadow-sm"
-                                >
-                                    <ChevronLeft size={16} />
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); nextAvgScore(); }}
-                                    className="p-1 rounded-full bg-white/50 hover:bg-white text-gray-500 hover:text-gray-700 transition shadow-sm"
-                                >
-                                    <ChevronRight size={16} />
-                                </button>
+                                <div className="flex items-center gap-1 z-20">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); prevAvgScore(); }}
+                                        className="p-1 rounded-full bg-white/50 hover:bg-white text-gray-500 hover:text-gray-700 transition shadow-sm"
+                                    >
+                                        <ChevronLeft size={16} />
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); nextAvgScore(); }}
+                                        className="p-1 rounded-full bg-white/50 hover:bg-white text-gray-500 hover:text-gray-700 transition shadow-sm"
+                                    >
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </div>
                             </div>
+                            <div className="w-full bg-white/50 rounded-full h-1.5 mb-2 relative z-10">
+                                <div className={`h-1.5 rounded-full ${avgScoreStats[currentAvgScoreIndex].progressColor}`} style={{ width: `${avgScoreStats[currentAvgScoreIndex].score}%` }}></div>
+                            </div>
+                            <p className="text-xs text-gray-500 relative z-10 flex items-center gap-1">
+                                {avgScoreStats[currentAvgScoreIndex].title}
+                            </p>
                         </div>
-                        <div className="w-full bg-white/50 rounded-full h-1.5 mb-2 relative z-10">
-                            <div className={`h-1.5 rounded-full ${avgScoreStats[currentAvgScoreIndex].progressColor}`} style={{ width: `${avgScoreStats[currentAvgScoreIndex].score}%` }}></div>
+                    ) : (
+                        <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm flex items-center justify-center">
+                            <p className="text-gray-400 text-sm">Loading stats...</p>
                         </div>
-                        <p className="text-xs text-gray-500 relative z-10 flex items-center gap-1">
-                            {avgScoreStats[currentAvgScoreIndex].title}
-                        </p>
-                    </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
@@ -621,54 +622,60 @@ const StudentDashboard = () => {
                     </div>
 
                     {/* Course Statistics (Donut Chart) */}
-                    <div className="lg:col-span-1 bg-[#FFF8E5] p-5 rounded-2xl border border-yellow-100/50 shadow-sm flex flex-col items-center justify-center relative h-[22rem]">
-                        <h3 className="font-bold text-gray-800 w-full mb-4 text-left">Course statistics</h3>
+                    {courseStats.length > 0 ? (
+                        <div className="lg:col-span-1 bg-[#FFF8E5] p-5 rounded-2xl border border-yellow-100/50 shadow-sm flex flex-col items-center justify-center relative h-[22rem]">
+                            <h3 className="font-bold text-gray-800 w-full mb-4 text-left">Course statistics</h3>
 
-                        <div className="relative w-40 h-40 mb-6 flex items-center justify-center">
-                            {/* Navigation Arrows */}
-                            <button
-                                onClick={prevSubject}
-                                className="absolute -left-8 p-1 text-gray-400 hover:text-gray-600 z-10 hover:bg-yellow-100 rounded-full transition-colors"
-                            >
-                                <ChevronLeft size={24} />
-                            </button>
-                            <button
-                                onClick={nextSubject}
-                                className="absolute -right-8 p-1 text-gray-400 hover:text-gray-600 z-10 hover:bg-yellow-100 rounded-full transition-colors"
-                            >
-                                <ChevronRight size={24} />
-                            </button>
+                            <div className="relative w-40 h-40 mb-6 flex items-center justify-center">
+                                {/* Navigation Arrows */}
+                                <button
+                                    onClick={prevSubject}
+                                    className="absolute -left-8 p-1 text-gray-400 hover:text-gray-600 z-10 hover:bg-yellow-100 rounded-full transition-colors"
+                                >
+                                    <ChevronLeft size={24} />
+                                </button>
+                                <button
+                                    onClick={nextSubject}
+                                    className="absolute -right-8 p-1 text-gray-400 hover:text-gray-600 z-10 hover:bg-yellow-100 rounded-full transition-colors"
+                                >
+                                    <ChevronRight size={24} />
+                                </button>
 
-                            {/* SVG Donut Chart */}
-                            <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#E5E7EB" strokeWidth="3.8" />
-                                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#EF4444" strokeWidth="3.8" strokeDasharray={`${courseStats[currentSubjectIndex].incomplete}, 100`} className="opacity-80 transition-all duration-500 ease-in-out" />
-                                <circle cx="18" cy="18" r="15.915" fill="none" stroke={courseStats[currentSubjectIndex].stroke} strokeWidth="3.8" strokeDasharray={`${courseStats[currentSubjectIndex].completed}, 100`} strokeDashoffset={`-${courseStats[currentSubjectIndex].incomplete}`} className="opacity-80 transition-all duration-500 ease-in-out" />
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                                <span className={`text-sm font-bold ${courseStats[currentSubjectIndex].color}`}>{courseStats[currentSubjectIndex].name}</span>
-                                <span className="text-xs text-gray-500">Course</span>
+                                {/* SVG Donut Chart */}
+                                <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+                                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#E5E7EB" strokeWidth="3.8" />
+                                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#EF4444" strokeWidth="3.8" strokeDasharray={`${courseStats[currentSubjectIndex].incomplete}, 100`} className="opacity-80 transition-all duration-500 ease-in-out" />
+                                    <circle cx="18" cy="18" r="15.915" fill="none" stroke={courseStats[currentSubjectIndex].stroke} strokeWidth="3.8" strokeDasharray={`${courseStats[currentSubjectIndex].completed}, 100`} strokeDashoffset={`-${courseStats[currentSubjectIndex].incomplete}`} className="opacity-80 transition-all duration-500 ease-in-out" />
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                    <span className={`text-sm font-bold ${courseStats[currentSubjectIndex].color}`}>{courseStats[currentSubjectIndex].name}</span>
+                                    <span className="text-xs text-gray-500">Course</span>
+                                </div>
+                            </div>
+
+                            <div className="w-full space-y-2">
+                                {/* Stats Legend */}
+                                <div className="flex justify-between text-xs">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: courseStats[currentSubjectIndex].stroke }}></div>
+                                        <span className="text-gray-600">Completed</span>
+                                    </div>
+                                    <span className="font-medium text-gray-800">{courseStats[currentSubjectIndex].completed}%</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                                        <span className="text-gray-600">Incompleted</span>
+                                    </div>
+                                    <span className="font-medium text-gray-800">{courseStats[currentSubjectIndex].incomplete}%</span>
+                                </div>
                             </div>
                         </div>
-
-                        <div className="w-full space-y-2">
-                            {/* Stats Legend */}
-                            <div className="flex justify-between text-xs">
-                                <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: courseStats[currentSubjectIndex].stroke }}></div>
-                                    <span className="text-gray-600">Completed</span>
-                                </div>
-                                <span className="font-medium text-gray-800">{courseStats[currentSubjectIndex].completed}%</span>
-                            </div>
-                            <div className="flex justify-between text-xs">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                                    <span className="text-gray-600">Incompleted</span>
-                                </div>
-                                <span className="font-medium text-gray-800">{courseStats[currentSubjectIndex].incomplete}%</span>
-                            </div>
+                    ) : (
+                        <div className="lg:col-span-1 bg-[#FFF8E5] p-5 rounded-2xl border border-yellow-100/50 shadow-sm flex flex-col items-center justify-center h-[22rem]">
+                            <p className="text-gray-500 font-medium">Loading courses...</p>
                         </div>
-                    </div>
+                    )}
                 </div>
 
 
