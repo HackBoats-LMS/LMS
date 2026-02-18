@@ -33,7 +33,7 @@ const login = () => {
         </p>
 
         <button
-          onClick={() => signIn("google", { callbackUrl: "/?student=true" })}
+          onClick={() => signIn("google", { callbackUrl: "/" })}
           className="bg-[#E65D25] text-white font-monument px-4 py-2 rounded-full flex items-center gap-3 hover:cursor-pointer"
         >
           <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
