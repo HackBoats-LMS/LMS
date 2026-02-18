@@ -116,232 +116,191 @@ const CourseOverview: React.FC<CourseOverviewProps> = ({ onModuleSelect }) => {
   ];
 
   return (
-    <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
-      {/* Sidebar - Copied from Student Dashboard Strategy */}
-      <aside className="w-64 bg-white border-r border-gray-100 flex flex-col p-6 hidden md:flex">
-        <div className="flex items-center gap-2 mb-10 text-[#FF5B5B]">
-          <img
-            src="https://www.hackboats.com/images/logo.png"
-            alt="Academy Logo"
-            className="h-8 w-auto"
-          />
-        </div>
-
-        <nav className="flex-1 space-y-1">
-          {[
-            { name: "Dashboard", icon: <LayoutDashboard size={20} />, link: "/" },
-            { name: "Courses", icon: <BookOpen size={20} />, active: true, link: "/pages/courses" },
-            { name: "Events", icon: <CreditCard size={20} />, link: "/pages/events" },
-          ].map((item) => (
-            <Link
-              key={item.name}
-              href={item.link}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${item.active ? 'bg-[#FFF0F0] text-[#FF5B5B]' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
-            >
-              <span className={item.active ? "text-[#FF5B5B]" : "text-gray-400"}>{item.icon}</span>
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="pt-6 border-t border-gray-100 space-y-1">
-          <button
-            onClick={() => signOut({ callbackUrl: "/" })}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-red-600 w-full"
-          >
-            <LogOut size={20} className="text-gray-400" />
-            Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        <style jsx global>{`
+    <div className="w-full bg-[#FFF8F8] font-sans text-gray-900">
+      <style jsx global>{`
           main::-webkit-scrollbar {
             display: none;
           }
         `}</style>
 
-        {/* Header */}
-        <header className="flex justify-between items-center mb-8 px-8 pt-8">
-          <div className="flex items-center gap-2">
-            <Link href="/pages/courses" className="text-sm text-gray-500 hover:text-[#FF5B5B]">Courses</Link>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-            <h1 className="text-2xl font-bold text-gray-800">OS Course</h1>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-700 hidden sm:block">{session?.user?.name || "Student"}</span>
-              <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
-                <User className="text-gray-400" />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Content Container */}
-        <div className="w-full space-y-8 px-8 pb-8">
-
-          {/* Header Card (Progress) */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Operating Systems</h2>
-              <p className="text-gray-500 text-sm">Master the fundamental concepts of Operating Systems, including process management, memory management, file systems, and concurrency.</p>
-            </div>
-
-            <div className="flex flex-col items-end gap-2 w-full md:w-auto">
-              <div className="flex gap-1">
-                {[...Array(20)].map((_, i) => {
-                  const segmentThreshold = (i + 1) * 5;
-                  const isCompleted = completedPercentage >= segmentThreshold;
-                  return (
-                    <div
-                      key={i}
-                      className={`h-2 w-1.5 rounded-full ${isCompleted ? 'bg-[#4CAF50]' : 'bg-gray-200'}`}
-                    ></div>
-                  );
-                })}
-              </div>
-              <div className="text-xs font-medium text-gray-500">{completedPercentage}% Completed</div>
-            </div>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex gap-6 border-b border-gray-200 overflow-x-auto pb-1">
-            {[
-              { id: 'learning-path', label: 'Learning Path', icon: <BookOpen size={16} /> },
-              { id: 'about', label: 'About', icon: <FileText size={16} /> },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.id ? 'border-[#FF5B5B] text-[#FF5B5B]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Timeline Content */}
-          <div className="space-y-6">
-            {activeTab === 'learning-path' && (
-              <>
-                {units.map((unit) => (
-                  <div key={unit.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div
-                      onClick={() => setExpandedUnit(expandedUnit === unit.id ? null : unit.id)}
-                      className="p-6 cursor-pointer hover:bg-gray-50 transition-colors flex gap-6 items-start"
-                    >
-                      <div className="flex flex-col items-center justify-center w-16 h-16 bg-white border border-gray-200 rounded-xl shrink-0 shadow-sm">
-                        <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Module</span>
-                        <span className="text-2xl font-bold text-gray-800">{unit.id}</span>
-                      </div>
-
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">{unit.title}</h3>
-                        <p className="text-gray-500 text-sm leading-relaxed">{unit.description}</p>
-                      </div>
-
-                      <div className="text-gray-400 pt-2">
-                        {expandedUnit === unit.id ? <ChevronDown /> : <ChevronRight />}
-                      </div>
-                    </div>
-
-                    {/* Expanded Modules */}
-                    {expandedUnit === unit.id && (
-                      <div className="border-t border-gray-100 bg-[#FAFAFA]/50 p-6 space-y-4">
-                        {unit.modules.map((module, idx) => {
-                          const isCompleted = studentProgress.some(p => {
-                            const dbUnitId = p.unitId || p.unit_id;
-                            const dbModuleId = p.moduleId || p.module_id;
-                            return (
-                              String(dbUnitId) === String(unit.id) &&
-                              String(dbModuleId) === String(idx + 1) &&
-                              !!p.completed
-                            );
-                          });
-
-                          return (
-                            <div
-                              key={module.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onModuleSelect(unit.id, idx + 1);
-                              }}
-                              className="group bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer flex gap-4"
-                            >
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 transition-colors ${isCompleted
-                                ? 'bg-green-600 text-white'
-                                : 'bg-white border border-gray-200 text-gray-500'
-                                }`}>
-                                {module.id}
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-sm mb-1 text-gray-800 transition-colors">{module.title}</h4>
-                                <p className="text-xs text-gray-500 line-clamp-1">{module.description}</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </>
-            )}
-
-            {activeTab === 'about' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-4">About the Course</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    This course provides a deep dive into the internal workings of Operating Systems. You will explore critical concepts such as process scheduling, memory management, mutual exclusion, deadlocks, and file systems.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <h4 className="font-bold text-gray-800 mb-3">What you'll learn</h4>
-                    <ul className="space-y-2 text-gray-600 text-sm">
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
-                        <span>Process Management & Scheduling</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
-                        <span>Memory Management & Virtual Memory</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
-                        <span>Concurrency, Synchronization & Deadlocks</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
-                        <span>File Systems & Mass Storage</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="font-bold text-gray-800 mb-3">Prerequisites</h4>
-                    <p className="text-gray-600 text-sm mb-4">
-                      Basic understanding of computer organization and C programming is recommended.
-                    </p>
-                    <div className="flex gap-2">
-                      <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">Core CS</span>
-                      <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-xs font-medium">Conceptual</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
+      {/* Header */}
+      <header className="flex justify-between items-center mb-8 px-8 pt-8">
+        <div className="flex items-center gap-2">
+          <Link href="/pages/courses" className="text-sm text-gray-500 hover:text-[#FF5B5B]">Courses</Link>
+          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <h1 className="text-2xl font-bold text-gray-800">OS Course</h1>
         </div>
-      </main>
+
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700 hidden sm:block">{session?.user?.name || "Student"}</span>
+            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
+              <User className="text-gray-400" />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Content Container */}
+      <div className="w-full space-y-8 px-8 pb-8">
+
+        {/* Header Card (Progress) */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Operating Systems</h2>
+            <p className="text-gray-500 text-sm">Master the fundamental concepts of Operating Systems, including process management, memory management, file systems, and concurrency.</p>
+          </div>
+
+          <div className="flex flex-col items-end gap-2 w-full md:w-auto">
+            <div className="flex gap-1">
+              {[...Array(20)].map((_, i) => {
+                const segmentThreshold = (i + 1) * 5;
+                const isCompleted = completedPercentage >= segmentThreshold;
+                return (
+                  <div
+                    key={i}
+                    className={`h-2 w-1.5 rounded-full ${isCompleted ? 'bg-[#4CAF50]' : 'bg-gray-200'}`}
+                  ></div>
+                );
+              })}
+            </div>
+            <div className="text-xs font-medium text-gray-500">{completedPercentage}% Completed</div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="flex gap-6 border-b border-gray-200 overflow-x-auto pb-1">
+          {[
+            { id: 'learning-path', label: 'Learning Path', icon: <BookOpen size={16} /> },
+            { id: 'about', label: 'About', icon: <FileText size={16} /> },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.id ? 'border-[#FF5B5B] text-[#FF5B5B]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Timeline Content */}
+        <div className="space-y-6">
+          {activeTab === 'learning-path' && (
+            <>
+              {units.map((unit) => (
+                <div key={unit.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div
+                    onClick={() => setExpandedUnit(expandedUnit === unit.id ? null : unit.id)}
+                    className="p-6 cursor-pointer hover:bg-gray-50 transition-colors flex gap-6 items-start"
+                  >
+                    <div className="flex flex-col items-center justify-center w-16 h-16 bg-white border border-gray-200 rounded-xl shrink-0 shadow-sm">
+                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Module</span>
+                      <span className="text-2xl font-bold text-gray-800">{unit.id}</span>
+                    </div>
+
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-800 mb-2">{unit.title}</h3>
+                      <p className="text-gray-500 text-sm leading-relaxed">{unit.description}</p>
+                    </div>
+
+                    <div className="text-gray-400 pt-2">
+                      {expandedUnit === unit.id ? <ChevronDown /> : <ChevronRight />}
+                    </div>
+                  </div>
+
+                  {/* Expanded Modules */}
+                  {expandedUnit === unit.id && (
+                    <div className="border-t border-gray-100 bg-[#FAFAFA]/50 p-6 space-y-4">
+                      {unit.modules.map((module, idx) => {
+                        const isCompleted = studentProgress.some(p => {
+                          const dbUnitId = p.unitId || p.unit_id;
+                          const dbModuleId = p.moduleId || p.module_id;
+                          return (
+                            String(dbUnitId) === String(unit.id) &&
+                            String(dbModuleId) === String(idx + 1) &&
+                            !!p.completed
+                          );
+                        });
+
+                        return (
+                          <div
+                            key={module.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onModuleSelect(unit.id, idx + 1);
+                            }}
+                            className="group bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer flex gap-4"
+                          >
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 transition-colors ${isCompleted
+                              ? 'bg-green-600 text-white'
+                              : 'bg-white border border-gray-200 text-gray-500'
+                              }`}>
+                              {module.id}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-sm mb-1 text-gray-800 transition-colors">{module.title}</h4>
+                              <p className="text-xs text-gray-500 line-clamp-1">{module.description}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+
+          {activeTab === 'about' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">About the Course</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  This course provides a deep dive into the internal workings of Operating Systems. You will explore critical concepts such as process scheduling, memory management, mutual exclusion, deadlocks, and file systems.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <h4 className="font-bold text-gray-800 mb-3">What you'll learn</h4>
+                  <ul className="space-y-2 text-gray-600 text-sm">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
+                      <span>Process Management & Scheduling</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
+                      <span>Memory Management & Virtual Memory</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
+                      <span>Concurrency, Synchronization & Deadlocks</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
+                      <span>File Systems & Mass Storage</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-gray-800 mb-3">Prerequisites</h4>
+                  <p className="text-gray-600 text-sm mb-4">
+                    Basic understanding of computer organization and C programming is recommended.
+                  </p>
+                  <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">Core CS</span>
+                    <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-xs font-medium">Conceptual</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+      </div>
     </div>
   );
 };

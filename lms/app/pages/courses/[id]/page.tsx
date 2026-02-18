@@ -5,6 +5,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import DashboardSidebar from '@/components/DashboardSidebar';
 import {
     LayoutDashboard, BookOpen, CreditCard, LogOut, User,
     ChevronRight, ChevronDown, CheckCircle2, FileText
@@ -263,39 +264,7 @@ const DynamicCoursePage = () => {
 
     return (
         <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
-            {/* Sidebar (Similar structure to FSWD/Student Dashboard) */}
-            <aside className="w-64 bg-white border-r border-gray-100 flex flex-col p-6 hidden md:flex">
-                <div className="flex items-center gap-2 mb-10 text-[#FF5B5B]">
-                    <span className="text-2xl font-bold">LMS</span>
-                </div>
-
-                <nav className="flex-1 space-y-1">
-                    {[
-                        { name: "Dashboard", icon: <LayoutDashboard size={20} />, link: "/pages/studentDashboard" },
-                        { name: "Courses", icon: <BookOpen size={20} />, active: true, link: "/pages/courses" },
-                        { name: "Events", icon: <CreditCard size={20} />, link: "/pages/events" },
-                    ].map((item) => (
-                        <Link
-                            key={item.name}
-                            href={item.link}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${item.active ? 'bg-[#FFF0F0] text-[#FF5B5B]' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
-                        >
-                            <span className={item.active ? "text-[#FF5B5B]" : "text-gray-400"}>{item.icon}</span>
-                            {item.name}
-                        </Link>
-                    ))}
-                </nav>
-
-                <div className="pt-6 border-t border-gray-100 space-y-1">
-                    <button
-                        onClick={() => signOut({ callbackUrl: "/" })}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-red-600 w-full"
-                    >
-                        <LogOut size={20} className="text-gray-400" />
-                        Logout
-                    </button>
-                </div>
-            </aside>
+            <DashboardSidebar activePage="courses" />
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
