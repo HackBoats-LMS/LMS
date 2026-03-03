@@ -10,12 +10,13 @@ async function checkDB() {
         console.log("Subject Data in DB:");
         subjects.forEach(s => {
             console.log(`- Name: ${s.name}`);
-            console.log(`  Description: ${s.description ? s.description : '(NO DESCRIPTION)'}`);
+            console.log(`  Description: ${s.description?.trim() || '(NO DESCRIPTION)'}`);
             console.log(`  _id: ${s._id}`);
             console.log("-------------------");
         });
     } catch (error) {
         console.error("DB check failed:", error);
+        process.exit(1);
     } finally {
         await mongoose.disconnect();
     }

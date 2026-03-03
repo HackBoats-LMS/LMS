@@ -71,7 +71,7 @@ const CoursesPage = () => {
               name: subject.name,
               code: subject.template?.substring(0, 4).toUpperCase() || "SUBJ",
               link: `/pages/courses/${subject._id}`,
-              description: subject.description || (subject.modules.length > 0 ? subject.modules[0].description : "No description available."),
+              description: (subject.description?.trim()) || (subject.modules[0]?.description?.trim()) || "No description available.",
               icon: <BookOpen className="w-6 h-6 text-green-600" />,
               color: "bg-green-50 border-green-100",
               textColor: "text-green-600",

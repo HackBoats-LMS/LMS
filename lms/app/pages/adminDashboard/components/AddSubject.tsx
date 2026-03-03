@@ -301,9 +301,11 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
 
         setLoading(true);
 
+        const normalizedDescription = subjectDescription?.trim() || '';
+
         const payload = {
             name,
-            description: subjectDescription,
+            description: normalizedDescription,
             template,
             modules,
             ...(editingId && { _id: editingId })

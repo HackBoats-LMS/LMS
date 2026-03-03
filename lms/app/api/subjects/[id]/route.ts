@@ -1,4 +1,4 @@
-
+import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Subject from "@/lib/models/Subject";
@@ -11,9 +11,9 @@ export async function GET(
         await dbConnect();
         const { id } = await params;
 
-        if (!id) {
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
             return NextResponse.json(
-                { success: false, error: "Subject ID is required" },
+                { success: false, error: "Invalid subject ID" },
                 { status: 400 }
             );
         }
