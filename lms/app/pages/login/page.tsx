@@ -15,7 +15,7 @@ const login = () => {
         src="/images/background2.svg"
         alt="Background"
         fill
-        className="object-cover object-top -z-1"
+        className="object-cover object-top -z-1 h-full"
         priority
       />
 

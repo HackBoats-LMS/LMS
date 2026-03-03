@@ -30,6 +30,7 @@ interface ModuleData {
 interface SubjectData {
     _id?: string;
     name: string;
+    description?: string;
     template: string;
     modules: ModuleData[];
 }
@@ -213,6 +214,7 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
     // Form State
     const [editingId, setEditingId] = useState<string | null>(null);
     const [name, setName] = useState('');
+    const [subjectDescription, setSubjectDescription] = useState('');
     const [template, setTemplate] = useState('');
     const [modules, setModules] = useState<ModuleData[]>([]);
 
@@ -227,7 +229,7 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
     const fetchSubjects = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/subjects');
+            const res = await fetch(`/api/subjects?t=${Date.now()}`, { cache: 'no-store' });
             const data = await res.json();
             if (data.success) {
                 setSubjects(data.data);
@@ -242,14 +244,17 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
     const handleAddNew = () => {
         setEditingId(null);
         setName('');
+        setSubjectDescription('');
         setTemplate('');
         setModules([{ name: '', videoId: '', place: '1', description: '', quiz: null }]);
         setView('form');
     };
 
     const handleEdit = (subject: SubjectData) => {
+        console.log("Editing subject:", subject);
         setEditingId(subject._id || null);
         setName(subject.name);
+        setSubjectDescription(subject.description || '');
         setTemplate(subject.template || '');
         setModules(subject.modules || []);
         setView('form');
@@ -299,6 +304,7 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
 
         const payload = {
             name,
+            description: subjectDescription,
             template,
             modules,
             ...(editingId && { _id: editingId })
@@ -401,13 +407,16 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
                     <div className="grid grid-cols-1 gap-4">
                         {subjects.map((subject) => (
                             <div key={subject._id} className="p-5 border border-gray-100 rounded-xl bg-gray-50 hover:bg-white hover:shadow-md transition-all flex justify-between items-center group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                    <div className="w-12 h-12 flex-shrink-0 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
                                         <BookOpen className="w-6 h-6" />
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-800">{subject.name}</h3>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-gray-800 truncate">{subject.name}</h3>
                                         <p className="text-sm text-gray-500">{subject.modules.length} Modules • {subject.template || 'No Template'}</p>
+                                        {subject.description && (
+                                            <p className="text-xs text-gray-400 mt-1 line-clamp-1 italic">{subject.description}</p>
+                                        )}
                                     </div>
                                 </div>
                                 <button
@@ -465,6 +474,16 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
                             onChange={(e) => setTemplate(e.target.value)}
                             placeholder="e.g. FSWD"
                             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                        />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                        <label className="text-sm font-bold text-gray-700">Subject Description (About Course)</label>
+                        <textarea
+                            value={subjectDescription}
+                            onChange={(e) => setSubjectDescription(e.target.value)}
+                            placeholder="Write a brief overview of the whole subject..."
+                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white resize-none"
+                            rows={3}
                         />
                     </div>
                 </div>

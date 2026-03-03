@@ -37,6 +37,7 @@ interface ModuleData {
 interface SubjectData {
     _id: string;
     name: string;
+    description?: string;
     template: string;
     modules: ModuleData[];
 }
@@ -67,7 +68,7 @@ const DynamicCoursePage = () => {
 
     const fetchSubject = async (id: string) => {
         try {
-            const res = await fetch('/api/subjects');
+            const res = await fetch(`/api/subjects?t=${Date.now()}`, { cache: 'no-store' });
             const data = await res.json();
             if (data.success) {
                 const foundSubject = data.data.find((s: any) => s._id === id);
@@ -234,7 +235,7 @@ const DynamicCoursePage = () => {
                         <div>
                             <h3 className="text-xl font-bold text-gray-800 mb-4">About the Course</h3>
                             <p className="text-gray-600 leading-relaxed">
-                                {subject.modules.length > 0 ? subject.modules[0].description : 'No description available.'}
+                                {subject.description || (subject.modules.length > 0 ? subject.modules[0].description : 'No description available.')}
                             </p>
                         </div>
                     </div>

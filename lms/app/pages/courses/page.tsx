@@ -39,38 +39,7 @@ const CoursesPage = () => {
   const [loading, setLoading] = useState(true);
 
   // Static Courses
-  const staticCourses: Course[] = [
-    {
-      id: 1,
-      name: "Full Stack Web Development",
-      code: "FSWD",
-      link: "/pages/fswd",
-      description: "Master front-end and back-end technologies to build complete, scalable web applications.",
-      icon: <BookOpen className="w-6 h-6 text-cyan-600" />,
-      color: "bg-cyan-50 border-cyan-100",
-      textColor: "text-cyan-600",
-      progressColor: "bg-cyan-500",
-      btnColor: "bg-cyan-50 text-cyan-600 hover:bg-cyan-100",
-      credits: 4,
-      modules: 18,
-      progress: 35
-    },
-    {
-      id: 2,
-      name: "Operating Systems",
-      code: "OS",
-      link: "/pages/os",
-      description: "Explore the internal architecture, process management, and design principles of modern OS.",
-      icon: <Award className="w-6 h-6 text-purple-600" />,
-      color: "bg-purple-50 border-purple-100",
-      textColor: "text-purple-600",
-      progressColor: "bg-purple-500",
-      btnColor: "bg-purple-50 text-purple-600 hover:bg-purple-100",
-      credits: 3,
-      modules: 25,
-      progress: 12
-    }
-  ];
+  const staticCourses: Course[] = [];
 
   useEffect(() => {
     const fetchCoursesAndProgress = async () => {
@@ -79,8 +48,8 @@ const CoursesPage = () => {
       try {
         setLoading(true);
 
-        // 1. Fetch Subjects
-        const subjectsRes = await fetch('/api/subjects');
+        // 1. Fetch Subjects with aggressive cache busting
+        const subjectsRes = await fetch(`/api/subjects?t=${Date.now()}`, { cache: 'no-store' });
         const subjectsData = await subjectsRes.json();
 
         // 2. Fetch User Progress
@@ -89,6 +58,7 @@ const CoursesPage = () => {
         const userProgress = progressData.success ? progressData.data : [];
 
         if (subjectsData.success && Array.isArray(subjectsData.data)) {
+          console.log("Subjects fetched from API (client-side):", subjectsData.data.map((s: any) => ({ name: s.name, hasDesc: !!s.description })));
           const dbCourses: Course[] = subjectsData.data.map((subject: any) => {
             // Calculate Progress
             const totalModules = subject.modules.length;
@@ -104,7 +74,7 @@ const CoursesPage = () => {
               name: subject.name,
               code: subject.template?.substring(0, 4).toUpperCase() || "SUBJ",
               link: `/pages/courses/${subject._id}`,
-              description: subject.modules.length > 0 ? subject.modules[0].description : "No description available.",
+              description: subject.description || (subject.modules.length > 0 ? subject.modules[0].description : "No description available."),
               icon: <BookOpen className="w-6 h-6 text-green-600" />,
               color: "bg-green-50 border-green-100",
               textColor: "text-green-600",
