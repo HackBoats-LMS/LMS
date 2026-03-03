@@ -38,39 +38,6 @@ const CoursesPage = () => {
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Static Courses
-  const staticCourses: Course[] = [
-    {
-      id: 1,
-      name: "Full Stack Web Development",
-      code: "FSWD",
-      link: "/pages/fswd",
-      description: "Master front-end and back-end technologies to build complete, scalable web applications.",
-      icon: <BookOpen className="w-6 h-6 text-cyan-600" />,
-      color: "bg-cyan-50 border-cyan-100",
-      textColor: "text-cyan-600",
-      progressColor: "bg-cyan-500",
-      btnColor: "bg-cyan-50 text-cyan-600 hover:bg-cyan-100",
-      credits: 4,
-      modules: 18,
-      progress: 35
-    },
-    {
-      id: 2,
-      name: "Operating Systems",
-      code: "OS",
-      link: "/pages/os",
-      description: "Explore the internal architecture, process management, and design principles of modern OS.",
-      icon: <Award className="w-6 h-6 text-purple-600" />,
-      color: "bg-purple-50 border-purple-100",
-      textColor: "text-purple-600",
-      progressColor: "bg-purple-500",
-      btnColor: "bg-purple-50 text-purple-600 hover:bg-purple-100",
-      credits: 3,
-      modules: 25,
-      progress: 12
-    }
-  ];
 
   useEffect(() => {
     const fetchCoursesAndProgress = async () => {
@@ -79,8 +46,8 @@ const CoursesPage = () => {
       try {
         setLoading(true);
 
-        // 1. Fetch Subjects
-        const subjectsRes = await fetch('/api/subjects');
+        // 1. Fetch Subjects with aggressive cache busting
+        const subjectsRes = await fetch(`/api/subjects?t=${Date.now()}`, { cache: 'no-store' });
         const subjectsData = await subjectsRes.json();
 
         // 2. Fetch User Progress
@@ -104,7 +71,7 @@ const CoursesPage = () => {
               name: subject.name,
               code: subject.template?.substring(0, 4).toUpperCase() || "SUBJ",
               link: `/pages/courses/${subject._id}`,
-              description: subject.modules.length > 0 ? subject.modules[0].description : "No description available.",
+              description: (subject.description?.trim()) || (subject.modules[0]?.description?.trim()) || "No description available.",
               icon: <BookOpen className="w-6 h-6 text-green-600" />,
               color: "bg-green-50 border-green-100",
               textColor: "text-green-600",
@@ -116,30 +83,13 @@ const CoursesPage = () => {
             };
           });
 
-          // Also update static courses progress if available (optional, but consistent)
-          const updatedStaticCourses = staticCourses.map(course => {
-            // For FSWD and OS, we might want to calculate real progress too if we had the total module count dynamic.
-            // For now, I'll calculate it based on the hardcoded module count in staticCourses if I can match the subject name.
-            // course.name in staticCourses is "Full Stack Web Development" which might match "FSWD" subject in DB progress?
-            // The progress entries use 'FSWD' and 'OS' as subject names usually.
-            const subjectKey = course.code; // 'FSWD' or 'OS'
-            const totalModules = course.modules;
-            const completedCount = userProgress.filter((p: any) =>
-              p.subject === subjectKey && (p.completed || p.percentage >= 60)
-            ).length;
-            return {
-              ...course,
-              progress: totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : course.progress
-            };
-          });
-
-          setAllCourses([...updatedStaticCourses, ...dbCourses]);
+          setAllCourses(dbCourses);
         } else {
-          setAllCourses(staticCourses);
+          setAllCourses([]);
         }
       } catch (error) {
         console.error("Failed to fetch courses or progress", error);
-        setAllCourses(staticCourses);
+        setAllCourses([]);
       } finally {
         setLoading(false);
       }

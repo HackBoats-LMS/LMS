@@ -37,6 +37,7 @@ interface ModuleData {
 interface SubjectData {
     _id: string;
     name: string;
+    description?: string;
     template: string;
     modules: ModuleData[];
 }
@@ -67,19 +68,17 @@ const DynamicCoursePage = () => {
 
     const fetchSubject = async (id: string) => {
         try {
-            const res = await fetch('/api/subjects');
+            const res = await fetch(`/api/subjects/${id}?t=${Date.now()}`, { cache: 'no-store' });
             const data = await res.json();
-            if (data.success) {
-                const foundSubject = data.data.find((s: any) => s._id === id);
-                if (foundSubject) {
-                    // Sort modules by place
-                    foundSubject.modules.sort((a: ModuleData, b: ModuleData) => {
-                        const placeA = parseFloat(a.place) || 0;
-                        const placeB = parseFloat(b.place) || 0;
-                        return placeA - placeB;
-                    });
-                    setSubject(foundSubject);
-                }
+            if (data.success && data.data) {
+                const foundSubject = data.data;
+                // Sort modules by place
+                foundSubject.modules.sort((a: ModuleData, b: ModuleData) => {
+                    const placeA = parseFloat(a.place) || 0;
+                    const placeB = parseFloat(b.place) || 0;
+                    return placeA - placeB;
+                });
+                setSubject(foundSubject);
             }
         } catch (error) {
             console.error("Failed to fetch subject", error);
@@ -234,7 +233,7 @@ const DynamicCoursePage = () => {
                         <div>
                             <h3 className="text-xl font-bold text-gray-800 mb-4">About the Course</h3>
                             <p className="text-gray-600 leading-relaxed">
-                                {subject.modules.length > 0 ? subject.modules[0].description : 'No description available.'}
+                                {subject.description || (subject.modules.length > 0 ? subject.modules[0].description : 'No description available.')}
                             </p>
                         </div>
                     </div>

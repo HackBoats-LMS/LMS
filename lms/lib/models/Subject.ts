@@ -22,6 +22,7 @@ export interface IModule {
 
 export interface ISubject extends Document {
     name: string;
+    description?: string;
     template?: string;
     modules: IModule[];
     createdAt: Date;
@@ -50,13 +51,13 @@ const ModuleSchema = new Schema<IModule>({
 const SubjectSchema = new Schema<ISubject>(
     {
         name: { type: String, required: true, unique: true },
+        description: { type: String },
         template: { type: String },
         modules: [ModuleSchema],
     },
     { timestamps: true }
 );
 
-// Prevent overwriting the model if it's already compiled
 const Subject: Model<ISubject> =
     mongoose.models.Subject || mongoose.model<ISubject>("Subject", SubjectSchema);
 

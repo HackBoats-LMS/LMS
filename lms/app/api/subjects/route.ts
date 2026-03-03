@@ -25,7 +25,13 @@ export async function POST(req: Request) {
             );
         }
 
+        if (process.env.NODE_ENV === 'development') {
+            console.log("Creating new subject with payload:", JSON.stringify(body, null, 2));
+        }
         const subject = await Subject.create(body);
+        if (process.env.NODE_ENV === 'development') {
+            console.log("Successfully created subject:", subject._id);
+        }
         return NextResponse.json({ success: true, data: subject }, { status: 201 });
     } catch (error: any) {
         console.error("Error creating subject:", error);
@@ -49,11 +55,17 @@ export async function PUT(req: Request) {
             );
         }
 
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`Updating subject ${_id} with data:`, JSON.stringify(updateData, null, 2));
+        }
         const subject = await Subject.findByIdAndUpdate(
             _id,
             { $set: updateData },
             { new: true, runValidators: true }
         );
+        if (process.env.NODE_ENV === 'development') {
+            console.log("Subject updated successfully:", subject ? "found and updated" : "not found");
+        }
 
         if (!subject) {
             return NextResponse.json(
