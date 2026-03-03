@@ -251,7 +251,6 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
     };
 
     const handleEdit = (subject: SubjectData) => {
-        console.log("Editing subject:", subject);
         setEditingId(subject._id || null);
         setName(subject.name);
         setSubjectDescription(subject.description || '');

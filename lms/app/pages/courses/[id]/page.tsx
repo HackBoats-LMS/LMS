@@ -68,19 +68,17 @@ const DynamicCoursePage = () => {
 
     const fetchSubject = async (id: string) => {
         try {
-            const res = await fetch(`/api/subjects?t=${Date.now()}`, { cache: 'no-store' });
+            const res = await fetch(`/api/subjects/${id}?t=${Date.now()}`, { cache: 'no-store' });
             const data = await res.json();
-            if (data.success) {
-                const foundSubject = data.data.find((s: any) => s._id === id);
-                if (foundSubject) {
-                    // Sort modules by place
-                    foundSubject.modules.sort((a: ModuleData, b: ModuleData) => {
-                        const placeA = parseFloat(a.place) || 0;
-                        const placeB = parseFloat(b.place) || 0;
-                        return placeA - placeB;
-                    });
-                    setSubject(foundSubject);
-                }
+            if (data.success && data.data) {
+                const foundSubject = data.data;
+                // Sort modules by place
+                foundSubject.modules.sort((a: ModuleData, b: ModuleData) => {
+                    const placeA = parseFloat(a.place) || 0;
+                    const placeB = parseFloat(b.place) || 0;
+                    return placeA - placeB;
+                });
+                setSubject(foundSubject);
             }
         } catch (error) {
             console.error("Failed to fetch subject", error);

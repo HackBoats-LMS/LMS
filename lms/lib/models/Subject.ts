@@ -58,13 +58,6 @@ const SubjectSchema = new Schema<ISubject>(
     { timestamps: true }
 );
 
-// Re-model in dev to ensure schema changes always propagate
-if (process.env.NODE_ENV === "development") {
-    Object.keys(mongoose.models).forEach(key => {
-        if (key === "Subject") delete mongoose.models[key];
-    });
-}
-
 const Subject: Model<ISubject> =
     mongoose.models.Subject || mongoose.model<ISubject>("Subject", SubjectSchema);
 

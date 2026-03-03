@@ -1,4 +1,4 @@
-
+import 'dotenv/config';
 import mongoose from 'mongoose';
 import dbConnect from './lib/mongodb';
 import Subject from './lib/models/Subject';
@@ -14,10 +14,10 @@ async function checkDB() {
             console.log(`  _id: ${s._id}`);
             console.log("-------------------");
         });
-        process.exit(0);
     } catch (error) {
         console.error("DB check failed:", error);
-        process.exit(1);
+    } finally {
+        await mongoose.disconnect();
     }
 }
 

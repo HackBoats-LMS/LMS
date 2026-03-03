@@ -25,9 +25,13 @@ export async function POST(req: Request) {
             );
         }
 
-        console.log("Creating new subject with payload:", JSON.stringify(body, null, 2));
+        if (process.env.NODE_ENV === 'development') {
+            console.log("Creating new subject with payload:", JSON.stringify(body, null, 2));
+        }
         const subject = await Subject.create(body);
-        console.log("Successfully created subject:", subject._id);
+        if (process.env.NODE_ENV === 'development') {
+            console.log("Successfully created subject:", subject._id);
+        }
         return NextResponse.json({ success: true, data: subject }, { status: 201 });
     } catch (error: any) {
         console.error("Error creating subject:", error);
@@ -51,13 +55,17 @@ export async function PUT(req: Request) {
             );
         }
 
-        console.log(`Updating subject ${_id} with data:`, JSON.stringify(updateData, null, 2));
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`Updating subject ${_id} with data:`, JSON.stringify(updateData, null, 2));
+        }
         const subject = await Subject.findByIdAndUpdate(
             _id,
             { $set: updateData },
             { new: true, runValidators: true }
         );
-        console.log("Subject updated successfully:", subject ? "found and updated" : "not found");
+        if (process.env.NODE_ENV === 'development') {
+            console.log("Subject updated successfully:", subject ? "found and updated" : "not found");
+        }
 
         if (!subject) {
             return NextResponse.json(
@@ -112,7 +120,6 @@ export async function GET() {
     try {
         await dbConnect();
         const subjects = await Subject.find({});
-        console.log("Subjects in DB:", subjects.map(s => ({ name: s.name, description: s.description ? s.description.substring(0, 20) : "N/A" })));
         return NextResponse.json({ success: true, data: subjects });
     } catch (error: any) {
         console.error("Error fetching subjects:", error);

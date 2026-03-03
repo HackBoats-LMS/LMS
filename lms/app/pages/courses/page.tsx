@@ -38,8 +38,6 @@ const CoursesPage = () => {
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Static Courses
-  const staticCourses: Course[] = [];
 
   useEffect(() => {
     const fetchCoursesAndProgress = async () => {
@@ -58,7 +56,6 @@ const CoursesPage = () => {
         const userProgress = progressData.success ? progressData.data : [];
 
         if (subjectsData.success && Array.isArray(subjectsData.data)) {
-          console.log("Subjects fetched from API (client-side):", subjectsData.data.map((s: any) => ({ name: s.name, hasDesc: !!s.description })));
           const dbCourses: Course[] = subjectsData.data.map((subject: any) => {
             // Calculate Progress
             const totalModules = subject.modules.length;
@@ -86,30 +83,13 @@ const CoursesPage = () => {
             };
           });
 
-          // Also update static courses progress if available (optional, but consistent)
-          const updatedStaticCourses = staticCourses.map(course => {
-            // For FSWD and OS, we might want to calculate real progress too if we had the total module count dynamic.
-            // For now, I'll calculate it based on the hardcoded module count in staticCourses if I can match the subject name.
-            // course.name in staticCourses is "Full Stack Web Development" which might match "FSWD" subject in DB progress?
-            // The progress entries use 'FSWD' and 'OS' as subject names usually.
-            const subjectKey = course.code; // 'FSWD' or 'OS'
-            const totalModules = course.modules;
-            const completedCount = userProgress.filter((p: any) =>
-              p.subject === subjectKey && (p.completed || p.percentage >= 60)
-            ).length;
-            return {
-              ...course,
-              progress: totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : course.progress
-            };
-          });
-
-          setAllCourses([...updatedStaticCourses, ...dbCourses]);
+          setAllCourses(dbCourses);
         } else {
-          setAllCourses(staticCourses);
+          setAllCourses([]);
         }
       } catch (error) {
         console.error("Failed to fetch courses or progress", error);
-        setAllCourses(staticCourses);
+        setAllCourses([]);
       } finally {
         setLoading(false);
       }
