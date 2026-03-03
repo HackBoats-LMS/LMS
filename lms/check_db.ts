@@ -16,7 +16,7 @@ async function checkDB() {
         });
     } catch (error) {
         console.error("DB check failed:", error);
-        process.exit(1);
+        process.exitCode = 1;
     } finally {
         await mongoose.disconnect();
     }

@@ -415,8 +415,8 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
                                     <div className="flex-1 min-w-0">
                                         <h3 className="font-bold text-gray-800 truncate">{subject.name}</h3>
                                         <p className="text-sm text-gray-500">{subject.modules.length} Modules • {subject.template || 'No Template'}</p>
-                                        {subject.description && (
-                                            <p className="text-xs text-gray-400 mt-1 line-clamp-1 italic">{subject.description}</p>
+                                        {subject.description?.trim() && (
+                                            <p className="text-xs text-gray-400 mt-1 line-clamp-1 italic">{subject.description.trim()}</p>
                                         )}
                                     </div>
                                 </div>
