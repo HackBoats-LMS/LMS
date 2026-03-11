@@ -38,8 +38,8 @@ import type { NextConfig } from "next";
 
 const ContentSecurityPolicy = `
 default-src 'self';
-script-src 'self' https://www.youtube.com ${process.env.NODE_ENV === "development" ? "'unsafe-eval' 'unsafe-inline'" : ""};
-style-src 'self' https://fonts.googleapis.com ${process.env.NODE_ENV === "development" ? "'unsafe-inline'" : ""};
+script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.youtube.com;
+style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 img-src 'self' data: blob: https://*.supabase.co https://res.cloudinary.com https://storage.googleapis.com https://lh3.googleusercontent.com https://ggu.edu.in https://kalvium.community https://www.hackboats.com;
 font-src 'self' https://fonts.gstatic.com;
 connect-src 'self' https://*.supabase.co http://127.0.0.1:54321;
