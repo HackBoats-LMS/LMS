@@ -33,6 +33,31 @@ interface Course {
   progress: number;
 }
 
+// --- Caching Utilities ---
+const CACHE_KEYS = { SUBJECTS: 'lms_subjects', PROGRESS: 'lms_progress' };
+const CACHE_DURATIONS = { SUBJECTS: 5 * 60 * 1000, PROGRESS: 30 * 1000 };
+
+const getFromCache = (key: string) => {
+  if (typeof window === 'undefined') return null;
+  const cached = localStorage.getItem(key);
+  if (!cached) return null;
+  try {
+    const { data, timestamp } = JSON.parse(cached);
+    if (Date.now() - timestamp < (CACHE_DURATIONS[key as keyof typeof CACHE_DURATIONS] || 0)) {
+      return data;
+    }
+    localStorage.removeItem(key);
+  } catch (e) {
+    localStorage.removeItem(key);
+  }
+  return null;
+};
+
+const saveToCache = (key: string, data: any) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+};
+
 const CoursesPage = () => {
   const { data: session } = useSession();
   const [allCourses, setAllCourses] = useState<Course[]>([]);
@@ -46,17 +71,43 @@ const CoursesPage = () => {
       try {
         setLoading(true);
 
-        // 1. Fetch Subjects with aggressive cache busting
-        const subjectsRes = await fetch(`/api/subjects?t=${Date.now()}`, { cache: 'no-store' });
-        const subjectsData = await subjectsRes.json();
+        // 1. Parallel Fetch with Caching functionality
+        let subjectsData = getFromCache(CACHE_KEYS.SUBJECTS);
+        let progressData = getFromCache(CACHE_KEYS.PROGRESS);
 
-        // 2. Fetch User Progress
-        const progressRes = await fetch(`/api/progress?userEmail=${session.user.email}`);
-        const progressData = await progressRes.json();
-        const userProgress = progressData.success ? progressData.data : [];
+        let subjectsResData: any = null;
+        let progressResData: any = null;
 
-        if (subjectsData.success && Array.isArray(subjectsData.data)) {
-          const dbCourses: Course[] = subjectsData.data.map((subject: any) => {
+        if (!subjectsData || !progressData) {
+          const endpoints = [];
+          if (!subjectsData) endpoints.push(fetch('/api/subjects').then(res => res.json()));
+          else endpoints.push(Promise.resolve({ success: true, data: subjectsData }));
+
+          if (!progressData) endpoints.push(fetch(`/api/progress?userEmail=${session.user.email}`).then(res => res.json()));
+          else endpoints.push(Promise.resolve({ success: true, data: progressData }));
+
+          const [sData, pData] = await Promise.all(endpoints);
+
+          if (!subjectsData && sData.success) {
+            subjectsData = sData.data;
+            saveToCache(CACHE_KEYS.SUBJECTS, subjectsData);
+          }
+          if (!progressData && pData.success) {
+            progressData = pData.data;
+            saveToCache(CACHE_KEYS.PROGRESS, progressData);
+          }
+
+          subjectsResData = sData;
+          progressResData = pData;
+        } else {
+          subjectsResData = { success: true, data: subjectsData };
+          progressResData = { success: true, data: progressData };
+        }
+
+        const userProgress = progressResData?.success ? progressResData.data : (progressData || []);
+
+        if (subjectsResData?.success && Array.isArray(subjectsResData.data)) {
+          const dbCourses: Course[] = subjectsResData.data.map((subject: any) => {
             // Calculate Progress
             const totalModules = subject.modules.length;
             const completedCount = userProgress.filter((p: any) =>

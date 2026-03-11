@@ -106,11 +106,12 @@ const StudentDashboard = () => {
   }, [session]);
 
   // --- Caching Utilities ---
-  const CACHE_KEYS = { TIMETABLE: 'lms_timetable', EVENTS: 'lms_events', PROGRESS: 'lms_progress' };
+  const CACHE_KEYS = { TIMETABLE: 'lms_timetable', EVENTS: 'lms_events', PROGRESS: 'lms_progress', SUBJECTS: 'lms_subjects' };
   const CACHE_DURATIONS = {
     TIMETABLE: 24 * 60 * 60 * 1000, // 24 hours
     EVENTS: 60 * 60 * 1000,         // 1 hour
-    PROGRESS: 30 * 1000             // 30 seconds
+    PROGRESS: 30 * 1000,            // 30 seconds
+    SUBJECTS: 5 * 60 * 1000         // 5 minutes
   };
 
   const getFromCache = (key: string) => {
@@ -137,8 +138,8 @@ const StudentDashboard = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      await fetchSubjects();
       await Promise.all([
+        fetchSubjects(),
         fetchTimetable(),
         fetchProgress(),
         fetchEvents(),
@@ -195,11 +196,18 @@ const StudentDashboard = () => {
   };
 
   const fetchSubjects = async () => {
+    const cached = getFromCache(CACHE_KEYS.SUBJECTS);
+    if (cached) {
+      setAllSubjects(cached);
+      return;
+    }
+
     try {
       const res = await fetch("/api/subjects");
       const data = await res.json();
       if (data.success) {
         setAllSubjects(data.data);
+        saveToCache(CACHE_KEYS.SUBJECTS, data.data);
       }
     } catch (error) {
       console.error("Failed to fetch subjects", error);
@@ -232,7 +240,6 @@ const StudentDashboard = () => {
     const cached = getFromCache(CACHE_KEYS.PROGRESS);
     if (cached) {
       setProgressData(cached);
-      calculateStats(cached);
       return;
     }
 
@@ -242,7 +249,6 @@ const StudentDashboard = () => {
 
       if (data.success && Array.isArray(data.data)) {
         setProgressData(data.data);
-        calculateStats(data.data);
         saveToCache(CACHE_KEYS.PROGRESS, data.data);
       }
     } catch (error) {
@@ -287,7 +293,7 @@ const StudentDashboard = () => {
 
   // Trigger stats recalculation when allSubjects are loaded
   useEffect(() => {
-    if (allSubjects.length > 0 && progressData.length > 0) {
+    if (allSubjects.length > 0) {
       calculateStats(progressData, allSubjects);
     }
   }, [allSubjects, progressData]);
@@ -556,7 +562,7 @@ const StudentDashboard = () => {
 
           {/* Continue Learning */}
           <div className="lg:col-span-1 rounded-2xl bg-[#E0F2FE] p-6 border border-gray-100 shadow-sm  transition-all duration-300 group flex flex-col h-[22rem]">
-            
+
             {continueProgress ? (
               <>
                 <div className="flex justify-between items-center mb-auto">
@@ -739,7 +745,7 @@ const StudentDashboard = () => {
           <div className="lg:col-span-2 rounded-2xl bg-[#F2F6FF] p-5  border border-blue-100/50 shadow-sm flex flex-col h-[22rem]">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-gray-800">Events</h3>
-              
+
             </div>
 
             <div className="space-y-3 flex-1 overflow-y-auto pr-1">
@@ -755,7 +761,7 @@ const StudentDashboard = () => {
                     </div>
                   ) : (
                     <div className="">
-                      
+
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
