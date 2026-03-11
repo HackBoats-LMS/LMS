@@ -39,7 +39,7 @@ export default function AdminLogin() {
         alt="Background"
         fill
 
-        className="object-cover object-top -z-1"
+        className="object-cover object-top -z-10"
         quality={100}
         priority
       />

@@ -15,14 +15,14 @@ const login = () => {
         src="/images/background2.svg"
         alt="Background"
         fill
-        className="object-cover object-top -z-1 h-full"
+        className="object-cover object-top -z-10 h-full"
         priority
       />
 
       <Navbar />
 
       {/* Hero Text Section */}
-      <div className="flex flex-col items-center justify-center text-center gap-6 pt-62 px-4">
+      <div className="flex flex-col items-center justify-center text-center gap-6 pt-[15.5rem] px-4 md:px-0">
         <p className="text-white text-4xl font-monument">
           Learn skills that actually <br /> move you forward
         </p>
