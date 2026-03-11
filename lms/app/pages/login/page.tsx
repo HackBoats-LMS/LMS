@@ -36,7 +36,7 @@ const login = () => {
 
         <button
           onClick={() => signIn("google", { callbackUrl: "/" })}
-          className="bg-[#E65D25] text-white font-monument px-4 py-2 rounded-full flex items-center gap-3 hover:cursor-pointer"
+          className="relative z-50 bg-[#E65D25] text-white font-monument px-6 py-3 rounded-full flex items-center gap-3 cursor-pointer hover:bg-[#d5521f] transition-all active:scale-95"
         >
           <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
             <Image

@@ -56,7 +56,7 @@ export default function AdminLogin() {
           />
         </div>
         <div className="flex gap-4">
-          <button className="bg-[#E65D25] text-white font-monument px-2 py-2 rounded-full font-medium flex justify-center items-center gap-2 hover:cursor-pointer"
+          <button className="bg-[#E65D25] text-white font-monument px-4 py-2 rounded-full font-medium flex justify-center items-center gap-2 cursor-pointer hover:bg-[#d5521f] transition-all active:scale-95"
             onClick={() => router.push("/pages/login")}
           >
             <span className='px-3'>Student</span>

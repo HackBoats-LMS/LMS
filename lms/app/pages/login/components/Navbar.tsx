@@ -16,7 +16,7 @@ const Navbar = () => {
                     className='w-44 h-auto'
                 />
             </div>
-            <button className="bg-[#E65D25] text-white font-monument px-2 py-2 rounded-full font-medium flex justify-center items-center gap-2 hover:cursor-pointer"
+            <button className="bg-[#E65D25] text-white font-monument px-3 py-2 rounded-full font-medium flex justify-center items-center gap-2 cursor-pointer hover:bg-[#d5521f] transition-all active:scale-95"
                 onClick={() => signIn("google", { callbackUrl: "/?student=true" })}
             >
                 <span className='px-3'>Login</span>
