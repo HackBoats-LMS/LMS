@@ -58,22 +58,7 @@ export default function AdminDashboard() {
 
     // Subject Configuration
     const SUBJECT_CONFIG: { [key: string]: any } = {
-        'fswd': {
-            name: 'FSWD',
-            title: 'Full Stack Web Dev',
-            color: 'text-cyan-600',
-            bg: 'bg-cyan-50',
-            border: 'border-cyan-100',
-            stroke: '#0891b2'
-        },
-        'os': {
-            name: 'OS',
-            title: 'Operating Systems',
-            color: 'text-purple-600',
-            bg: 'bg-purple-50',
-            border: 'border-purple-100',
-            stroke: '#9333ea'
-        }
+        
     };
 
     // Sidebar Items
