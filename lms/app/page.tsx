@@ -863,9 +863,10 @@ const StudentDashboard = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Always show Module Badge Summary */}
-                <div className="p-4  bg-blue-50 border border-blue-100 flex items-center gap-3">
-                  <div className="p-3 bg-white  shadow-sm text-blue-500">
-                    <Award size={24} />
+                <div className="p-4  border border-blue-100 flex items-center gap-3">
+                  <div className="p-3">
+                    {/* <Award size={24} /> */}
+                    <img src="/icons/20badge.png" width={55} height={55} alt="" />
                   </div>
                   <div>
                     <h5 className="font-bold text-gray-800">Module Master</h5>
@@ -878,9 +879,9 @@ const StudentDashboard = () => {
 
                 {/* Subject Badges */}
                 {earnedBadges.map((badge) => (
-                  <div key={badge.id} className="p-4  bg-yellow-50 border border-yellow-100 flex items-center gap-3">
-                    <div className="p-3 bg-white  shadow-sm text-yellow-500">
-                      {badge.icon}
+                  <div key={badge.id} className="p-4  border border-yellow-100 flex items-center gap-3">
+                    <div className="p-3">
+                      <img src="/icons/500badge.png" width={85} height={85} alt="" />
                     </div>
                     <div>
                       <h5 className="font-bold text-gray-800">{badge.name}</h5>
