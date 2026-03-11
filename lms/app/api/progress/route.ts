@@ -70,6 +70,8 @@ export async function POST(req: NextRequest) {
 
     console.log('Progress saved successfully (Upsert):', { userEmail, subject, unitId: unitIdInt, percentage });
 
+    await updateUserStreak(userEmail);
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('POST /api/progress error:', error);
@@ -123,4 +125,56 @@ export async function GET(req: NextRequest) {
     console.error('GET /api/progress error:', error);
     return NextResponse.json({ error: "Failed to fetch progress" }, { status: 500 });
   }
+}
+
+
+//UPDATE USER STREAK FUNCTION
+
+export async function updateUserStreak(email: String) {
+
+  const { data: user, error } = await supabase.from('users').select('currentStreak, lastActiveDate').eq('email', email).single();
+
+  if (error || !user) return;
+
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  const yesterday = new Date(today);
+
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+  const lastActive = user.lastActiveDate; // This is usually a string "YYYY-MM-DD" or null
+
+  // Safely get the last active date string without crashing on null
+  let lastActiveStr = null;
+  if (lastActive) {
+    lastActiveStr = typeof lastActive === 'string'
+      ? lastActive.split('T')[0]
+      : new Date(lastActive).toISOString().split('T')[0];
+  }
+
+  let newStreak = user.currentStreak || 0;
+
+  if (lastActiveStr === todayStr) {
+    // Scenario A: Already active today => Do nothing
+    return newStreak;
+  } else if (lastActiveStr === yesterdayStr) {
+    // Scenario B: Active yesterday => Increment
+    newStreak += 1;
+  } else {
+    // Scenario C: Missed a day or first time => Reset to 1
+    newStreak = 1;
+  }
+
+  await supabase.from('users').update(
+    {
+      currentStreak: newStreak,
+      lastActiveDate: todayStr
+    }
+  ).eq('email', email);
+
+  return newStreak;
+
+
 }

@@ -1,5 +1,6 @@
 
 import { NextResponse } from "next/server";
+import redis from '@/lib/redis';
 import dbConnect from "@/lib/mongodb";
 import Subject from "@/lib/models/Subject";
 
@@ -32,7 +33,10 @@ export async function POST(req: Request) {
         if (process.env.NODE_ENV === 'development') {
             console.log("Successfully created subject:", subject._id);
         }
-        return NextResponse.json({ success: true, data: subject }, { status: 201 });
+        // Invalidate subjects cache
+        if (redis) {
+            await redis.del('subjects');
+        }
     } catch (error: any) {
         console.error("Error creating subject:", error);
         return NextResponse.json(
@@ -72,6 +76,11 @@ export async function PUT(req: Request) {
                 { success: false, error: "Subject not found" },
                 { status: 404 }
             );
+        }
+
+        // Invalidate subjects cache
+        if (redis) {
+            await redis.del('subjects');
         }
 
         return NextResponse.json({ success: true, data: subject });
@@ -118,8 +127,19 @@ export async function DELETE(req: Request) {
 
 export async function GET() {
     try {
+        // Attempt to retrieve cached subjects if Redis is available
+        if (redis) {
+            const cached = await redis.get('subjects');
+            if (cached) {
+                return NextResponse.json({ success: true, data: JSON.parse(cached) });
+            }
+        }
         await dbConnect();
         const subjects = await Subject.find({});
+        // Store result in cache for future requests (TTL 5 minutes)
+        if (redis) {
+            await redis.set('subjects', JSON.stringify(subjects), 'EX', 300);
+        }
         return NextResponse.json({ success: true, data: subjects });
     } catch (error: any) {
         console.error("Error fetching subjects:", error);
