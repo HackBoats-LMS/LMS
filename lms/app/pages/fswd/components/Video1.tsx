@@ -53,6 +53,15 @@ const Video1 = ({ videoId, onComplete }: { videoId: string; onComplete?: () => v
     event.target.setPlaybackQuality('hd1080');
   };
 
+  const skipVideo = useCallback(() => {
+  if (!playerRef.current) return;
+
+  const duration = playerRef.current.getDuration();
+  if (duration) {
+    playerRef.current.seekTo(duration - 1, true);
+  }
+}, []);
+
   const onPlayerStateChange = useCallback((event: any) => {
     if (event.data === window.YT.PlayerState.PLAYING) {
       setPlaying(true);
@@ -300,6 +309,17 @@ const Video1 = ({ videoId, onComplete }: { videoId: string; onComplete?: () => v
         >
           {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
         </button>
+        {process.env.NODE_ENV === "development" && (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      skipVideo();
+    }}
+    className="text-white bg-red-500 px-3 py-1 rounded text-xs hover:bg-red-600"
+  >
+    Skip
+  </button>
+)}
       </div>
     </div>
   );

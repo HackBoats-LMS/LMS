@@ -1,5 +1,6 @@
 import supabase from "@/lib/db";
 import { NextResponse } from "next/server";
+import redis from "@/lib/redis";
 
 export async function PUT(req: Request) {
   try {
@@ -15,6 +16,10 @@ export async function PUT(req: Request) {
       .eq('email', email);
 
     if (error) throw error;
+
+    if (redis) {
+      await redis.del('students:all');
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {

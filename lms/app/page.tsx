@@ -23,7 +23,8 @@ import {
   User,
   Zap,
   Globe,
-  Award
+  Award,
+  PlayCircle
 } from 'lucide-react';
 
 // --- Types ---
@@ -47,11 +48,18 @@ const StudentDashboard = () => {
   const [allSubjects, setAllSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Leaderboard State
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+
+  // Streak State
+  const [dayStreak, setDayStreak] = useState(0);
+
+  // Continue Learning State
+  const [continueProgress, setContinueProgress] = useState<any>(null);
+
   // Dynamic Stats State
   const [stats, setStats] = useState([
-    { label: "Best Performance", value: "0%", subtext: "N/A", icon: <CheckCircle2 className="w-6 h-6 text-green-600" />, color: "bg-green-50 border-green-100", progressColor: "bg-green-500", progress: 0 },
-    { label: "Needs Attention", value: "0%", subtext: "N/A", icon: <LayoutDashboard className="w-6 h-6 text-orange-600" />, color: "bg-orange-50 border-orange-100", progressColor: "bg-orange-500", progress: 0 },
-    { label: "Quizzes completed", value: "0%", subtext: "0 completed", icon: <BookOpen className="w-6 h-6 text-rose-600" />, color: "bg-rose-50 border-rose-100", progressColor: "bg-rose-500", progress: 0 },
+    { label: "Total XP", value: "0", subtext: "Experience Points", icon: <Zap className="w-6 h-6 text-yellow-500" />, color: "bg-yellow-50 border-yellow-100", progressColor: "bg-yellow-500", progress: 100 }
   ]);
 
   const [activeTasks, setActiveTasks] = useState<any[]>([]);
@@ -133,12 +141,56 @@ const StudentDashboard = () => {
       await Promise.all([
         fetchTimetable(),
         fetchProgress(),
-        fetchEvents()
+        fetchEvents(),
+        fetchLeaderboard(),
+        fetchStreak(),
+        fetchContinueLearning()
       ]);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLeaderboard = async () => {
+    try {
+      const res = await fetch("/api/leaderboard");
+      const data = await res.json();
+      if (data.success && data.data) {
+        setLeaderboard(data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch leaderboard", error);
+    }
+  };
+
+  const fetchStreak = async () => {
+    try {
+      if (!session?.user?.email) return;
+      const { data, error } = await supabase
+        .from("users")
+        .select("currentStreak")
+        .eq("email", session.user.email)
+        .single();
+      if (data && !error) {
+        setDayStreak(data.currentStreak || 0);
+      }
+    } catch (e) {
+      console.error("Failed to fetch streak", e);
+    }
+  };
+
+  const fetchContinueLearning = async () => {
+    try {
+      if (!session?.user?.email) return;
+      const res = await fetch(`/api/progress/continue?email=${encodeURIComponent(session.user.email)}`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setContinueProgress(data.data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch continue learning module", e);
     }
   };
 
@@ -357,25 +409,6 @@ const StudentDashboard = () => {
     setCourseStats(newCourseStats);
     setAvgScoreStats(newAvgScoreStats);
 
-    // Calculate Best and Worst
-    // Calculate Best and Worst based on 65% threshold
-    const bestSubjectsList = subjectPerformances.filter(s => s.score > 65);
-    const needsAttentionList = subjectPerformances.filter(s => s.score <= 65);
-
-    // Sort for consistent display
-    bestSubjectsList.sort((a, b) => b.score - a.score); // Highest first
-    needsAttentionList.sort((a, b) => a.score - b.score); // Lowest first
-
-    const getGroupStats = (list: typeof subjectPerformances) => {
-      if (list.length === 0) return { value: "N/A", subtext: "No subjects", progress: 0 };
-      const avg = Math.round(list.reduce((acc, curr) => acc + curr.score, 0) / list.length);
-      const names = list.map(s => s.name).join(", ");
-      return { value: `${avg}%`, subtext: names, progress: avg };
-    };
-
-    const bestStats = getGroupStats(bestSubjectsList);
-    const worstStats = getGroupStats(needsAttentionList);
-
     // --- Calculate Badges & XP ---
     let calculatedXP = 0;
     let modulesCount = 0;
@@ -428,34 +461,7 @@ const StudentDashboard = () => {
         color: "bg-yellow-50 border-yellow-100",
         progressColor: "bg-yellow-500",
         progress: 100
-      },
-      {
-        label: "Best Performance (>65%)",
-        value: bestStats.value,
-        subtext: bestStats.subtext,
-        icon: <CheckCircle2 className="w-6 h-6 text-green-600" />,
-        color: "bg-green-50 border-green-100",
-        progressColor: "bg-green-500",
-        progress: bestStats.progress
-      },
-      {
-        label: "Needs Attention (≤65%)",
-        value: worstStats.value,
-        subtext: worstStats.subtext,
-        icon: <LayoutDashboard className="w-6 h-6 text-orange-600" />,
-        color: "bg-orange-50 border-orange-100",
-        progressColor: "bg-orange-500",
-        progress: worstStats.progress
-      },
-      {
-        label: "Quizzes completed",
-        value: TOTAL_QUIZZES > 0 ? `${Math.round((quizzesCompleted / TOTAL_QUIZZES) * 100)}%` : "0%",
-        subtext: `${quizzesCompleted} of ${TOTAL_QUIZZES} quizzes`,
-        icon: <BookOpen className="w-6 h-6 text-rose-600" />,
-        color: "bg-rose-50 border-rose-100",
-        progressColor: "bg-rose-500",
-        progress: TOTAL_QUIZZES > 0 ? (quizzesCompleted / TOTAL_QUIZZES) * 100 : 0
-      },
+      }
     ]);
   };
 
@@ -487,7 +493,7 @@ const StudentDashboard = () => {
   const upcomingClass = getScheduleForDate(new Date()).find(s => s && s.subject);
 
   return (
-    <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
+    <div className="flex h-screen bg-[#F5F5F7] font-sans text-gray-900 overflow-hidden">
       <DashboardSidebar activePage="dashboard" />
 
       {/* Main Content */}
@@ -509,32 +515,170 @@ const StudentDashboard = () => {
           </div>
         </header>
 
-        {/* Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          {stats.map((stat, i) => (
-            <div key={i} className={`p-5 rounded-2xl border ${stat.color} bg-white shadow-sm hover:shadow-md transition-shadow`}>
-              <div className="flex justify-between items-start mb-4">
+        {/* Leaderboard and States Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+
+          <div className="lg:col-span-1 flex flex-col justify-between no-scrollbar gap-6 h-[22rem]">
+            <div className={`relative overflow-hidden p-5 bg-[#FFE5D4] rounded-2xl shadow-sm   w-full flex-1 flex flex-col justify-center`}>
+              <div className="mb-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">{stat.label}</p>
-                  <h3 className="text-2xl font-bold text-gray-800">{stat.value}</h3>
+                  <h3 className="text-5xl font-bold text-[#E65A21]/80">{dayStreak}</h3>
+                  <p className="text-lg font-medium text-[#E65A21]/80 mb-1">Day Streak</p>
                 </div>
-                <div className="p-2 bg-white rounded-lg shadow-sm">
-                  {stat.icon}
-                </div>
+
+
+                <img
+                  src="/fire.png"
+                  width={200}
+                  height={150}
+                  alt="image"
+                  className="absolute -bottom-14 -right-14" />
+
               </div>
-              <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
-                <div className={`h-1.5 rounded-full ${stat.progressColor}`} style={{ width: stat.value }}></div>
-              </div>
-              <p className="text-xs text-gray-500">{stat.subtext}</p>
             </div>
-          ))}
 
+            <div className={`relative overflow-hidden p-5 bg-[#FFF4D4] rounded-2xl shadow-sm w-full flex-1 flex flex-col justify-center`}>
+              <div className="mb-4">
+                <div>
+                  <h3 className="text-5xl font-bold text-[#D9A01C]/80">{totalXP}</h3>
+                  <p className="text-lg font-medium text-[#D9A01C]/80 mb-1">Total XP</p>
+                </div>
+                {/* <img src="/images/xpcoin.png" alt="image" width={170} className="absolute -top-10 -right-12" /> */}
+                <Zap
+                  className="absolute -top-4 -right-8 text-[#D9A01C]/20"
+                  size={140}
+                  fill="currentColor"
+                />
+              </div>
+              <p className='text-[#D9A01C]/80 text-[0.7rem]'>XP will increase from finishing modules</p>
+            </div>
+          </div>
 
+          {/* Continue Learning */}
+          <div className="lg:col-span-1 rounded-2xl bg-[#E0F2FE] p-6 border border-gray-100 shadow-sm  transition-all duration-300 group flex flex-col h-[22rem]">
+            
+            {continueProgress ? (
+              <>
+                <div className="flex justify-between items-center mb-auto">
+                  <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                    Resume Course
+                  </h3>
+                  <span className="text-[9px] font-bold px-3  rounded-full bg-blue-50 text-blue-600 tracking-wide uppercase">
+                    In Progress
+                  </span>
+                </div>
+
+                <div className="flex flex-col flex-1 justify-center py-4 overflow-hidden">
+                  <h4
+                    title={continueProgress.subject}
+                    className="text-3xl font-black text-gray-900 mb-3 leading-tight tracking-tight truncate block w-full"
+                  >
+                    {continueProgress.subject}
+                  </h4>
+
+                  <p
+                    title={continueProgress.moduleName || `Unit ${continueProgress.unitId} - Module ${continueProgress.moduleId}`}
+                    className="text-base font-medium text-gray-500 truncate block w-full"
+                  >
+                    {continueProgress.moduleName || `Unit ${continueProgress.unitId} - Module ${continueProgress.moduleId}`}
+                  </p>
+                </div>
+
+                <div className="mt-auto space-y-5">
+                  {/* Matching Dashboard Progress Bar */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-2 font-bold">
+                      <span className="text-gray-700">Overall Progress</span>
+                      <span className="text-blue-600">{continueProgress.percentage || 0}%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                      <div className="h-full rounded-full bg-blue-500 transition-all duration-500" style={{ width: `${continueProgress.percentage || 0}%` }}></div>
+                    </div>
+                  </div>
+
+                  {/* Matching Dashboard Button Link */}
+                  <Link
+                    href={(() => {
+                      const matchingSubject = allSubjects.find(s => s.name === continueProgress.subject);
+                      if (matchingSubject && matchingSubject._id) {
+                        return `/pages/courses/${matchingSubject._id}`;
+                      }
+                      return '/pages/courses';
+                    })()}
+                    className="flex items-center justify-center gap-2 w-full p-3.5 bg-gray-900 hover:bg-black text-white font-semibold rounded-xl transition-all shadow-md group/btn"
+                  >
+                    Continue Learning
+                    <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                    Resume Course
+                  </h3>
+                </div>
+                <div className="h-full flex flex-col justify-center items-center text-gray-400 p-6 space-y-3">
+                  <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-2">
+                    <PlayCircle className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-500 text-center">No recent activity.</p>
+                  <p className="text-xs text-gray-400 text-center">Start a course to track your progress here!</p>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="lg:col-span-2 rounded-2xl bg-white p-5  border border-gray-100 shadow-sm flex flex-col h-[22rem]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
+                Weekly Leaderboard
+              </h3>
+              <span className="text-xs font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full  border border-gray-100">Top Students</span>
+            </div>
+            <div className="space-y-3 overflow-y-auto pr-2 flex-1" style={{ scrollbarWidth: 'thin' }}>
+              {leaderboard.length > 0 ? leaderboard.map((user, idx) => {
+                const isCurrentUser = session?.user?.email && user?.email && String(user.email).toLowerCase() === String(session.user.email).toLowerCase();
+                return (
+                  <div key={idx} className={`${isCurrentUser ? 'bg-[#F2F6FF] border-blue-200 shadow-sm' : 'bg-white border-gray-100'} rounded-xl border p-3 flex items-center gap-4 cursor-default group relative`}>
+                    {isCurrentUser && (
+                      <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-r-full"></div>
+                    )}
+                    <div className={`w-8 h-8 rounded-full flex flex-shrink-0 items-center justify-center font-bold text-sm shadow-sm ${idx === 0 ? 'bg-yellow-100 text-yellow-600' : idx === 1 ? 'bg-gray-200 text-gray-600' : idx === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
+                      #{idx + 1}
+                    </div>
+                    <div className={`w-10 h-10 rounded-full ${isCurrentUser ? 'bg-blue-500 text-white border-blue-600' : 'bg-blue-50 text-blue-500 border-blue-100'} overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm border relative`}>
+                      <span className="font-bold text-sm uppercase">{user.fullName ? user.fullName.substring(0, 2) : "UN"}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className={`text-sm font-bold truncate flex items-center gap-2 ${isCurrentUser ? 'text-blue-900' : 'text-gray-800'}`}>
+                        {user.fullName || user.email}
+                        {isCurrentUser && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">You</span>}
+                      </h4>
+                      <span className={`text-xs font-medium ${isCurrentUser ? 'text-blue-700' : 'text-gray-500'}`}>{user.modulesCompleted} modules completed</span>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <span className={`text-sm font-bold flex items-center gap-1.5 justify-end ${isCurrentUser ? 'text-blue-900' : 'text-gray-800'}`}>
+                        {user.totalXP} <Zap className="w-4 h-4 text-yellow-500 fill-current" />
+                      </span>
+                    </div>
+                  </div>
+                )
+              }) : (
+                <div className="h-full flex flex-col justify-center items-center text-gray-400 p-6">
+                  <Award className="w-12 h-12 mb-3 text-gray-200" />
+                  <p className="text-sm font-medium text-gray-500">No top performers yet.</p>
+                  <p className="text-xs text-gray-400 mt-1">Complete modules to climb the ranks!</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
           {/* Calendar Widget */}
-          <div className="lg:col-span-1 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[22rem] overflow-hidden">
+          <div className="lg:col-span-1 rounded-2xl bg-white p-5  border border-gray-200 shadow-sm flex flex-col h-[22rem] overflow-hidden">
             <div className="flex justify-between items-center mb-6">
               <span className="font-bold text-gray-800 text-lg">
                 {selectedDate.toLocaleString('default', { month: 'long' })}
@@ -574,16 +718,16 @@ const StudentDashboard = () => {
                             `}</style>
               {selectedSchedule.filter(s => s && s.subject).length > 0 ? (
                 selectedSchedule.filter(s => s && s.subject).map((slot, idx) => (
-                  <div key={idx} className="p-3 border border-gray-100 rounded-xl bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow">
+                  <div key={idx} className="p-3 rounded-xl border border-gray-100  bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-1">
-                      <span className="text-xs font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded text-[10px]">{slot.time}</span>
+                      <span className="text-xs font-bold text-gray-900 rounded-full bg-gray-100 px-2 py-0.5  text-[10px]">{slot.time}</span>
                     </div>
                     <p className="text-sm font-bold text-gray-800 mb-0.5">{slot.subject}</p>
                     <p className="text-xs text-gray-500 truncate">{slot.description || slot.teacher || "No details"}</p>
                   </div>
                 ))
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-gray-400 p-4 border border-dashed border-gray-200 rounded-2xl">
+                <div className="h-full rounded-xl flex flex-col items-center justify-center text-gray-400 p-4 border border-dashed border-gray-200 ">
                   <Clock className="w-8 h-8 mb-2 opacity-50" />
                   <p className="text-xs font-medium">No schedule</p>
                 </div>
@@ -592,17 +736,17 @@ const StudentDashboard = () => {
           </div>
 
           {/* Active Tasks */}
-          <div className="lg:col-span-2 bg-[#F2F6FF] p-5 rounded-2xl border border-blue-100/50 shadow-sm flex flex-col h-[22rem]">
+          <div className="lg:col-span-2 rounded-2xl bg-[#F2F6FF] p-5  border border-blue-100/50 shadow-sm flex flex-col h-[22rem]">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-gray-800">Active tasks</h3>
-              <button className="text-xs font-medium text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm hover:bg-gray-50">By priority</button>
+              <h3 className="font-bold text-gray-800">Events</h3>
+              
             </div>
 
             <div className="space-y-3 flex-1 overflow-y-auto pr-1">
               {activeTasks.map((task) => (
-                <div key={task.id} className="bg-white p-4 rounded-xl shadow-sm flex items-start gap-4 hover:shadow-md transition-shadow cursor-pointer border border-transparent hover:border-gray-100">
+                <div key={task.id} className="bg-white rounded-xl p-4 shadow-sm flex items-start gap-4 hover:cursor-pointer border border-transparent hover:border-gray-100">
                   {task.image_url ? (
-                    <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100">
                       <img
                         src={task.image_url}
                         alt={task.title}
@@ -610,8 +754,8 @@ const StudentDashboard = () => {
                       />
                     </div>
                   ) : (
-                    <div className="p-3 bg-gray-50 rounded-lg text-gray-500 flex-shrink-0">
-                      {task.icon}
+                    <div className="">
+                      
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -620,7 +764,7 @@ const StudentDashboard = () => {
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${task.status === 'In progress' || task.status === 'Upcoming' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
                         {task.status}
                       </span>
-                      <span className="text-[10px] text-red-500 font-medium bg-red-50 px-2 py-0.5 rounded-full whitespace-nowrap">Time left: {task.time}</span>
+                      <span className="text-[10px] text-red-500 rounded-full font-medium bg-red-50 px-2 py-0.5  whitespace-nowrap">Time left: {task.time}</span>
                     </div>
                   </div>
                 </div>
@@ -630,20 +774,20 @@ const StudentDashboard = () => {
 
           {/* Course Statistics (Donut Chart) */}
           {courseStats.length > 0 ? (
-            <div className="lg:col-span-1 bg-[#FFF8E5] p-5 rounded-2xl border border-yellow-100/50 shadow-sm flex flex-col items-center justify-center relative h-[22rem]">
+            <div className="lg:col-span-1 bg-[#FFF8E5] p-5  border border-yellow-100/50 shadow-sm flex flex-col items-center justify-center relative h-[22rem]">
               <h3 className="font-bold text-gray-800 w-full mb-4 text-left">Course statistics</h3>
 
               <div className="relative w-40 h-40 mb-6 flex items-center justify-center">
                 {/* Navigation Arrows */}
                 <button
                   onClick={prevSubject}
-                  className="absolute -left-8 p-1 text-gray-400 hover:text-gray-600 z-10 hover:bg-yellow-100 rounded-full transition-colors"
+                  className="absolute -left-8 p-1 text-gray-400 hover:text-gray-600 z-10 hover:bg-yellow-100  transition-colors"
                 >
                   <ChevronLeft size={24} />
                 </button>
                 <button
                   onClick={nextSubject}
-                  className="absolute -right-8 p-1 text-gray-400 hover:text-gray-600 z-10 hover:bg-yellow-100 rounded-full transition-colors"
+                  className="absolute -right-8 p-1 text-gray-400 hover:text-gray-600 z-10 hover:bg-yellow-100  transition-colors"
                 >
                   <ChevronRight size={24} />
                 </button>
@@ -664,14 +808,14 @@ const StudentDashboard = () => {
                 {/* Stats Legend */}
                 <div className="flex justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: courseStats[currentSubjectIndex].stroke }}></div>
+                    <div className={`w-2 h-2 `} style={{ backgroundColor: courseStats[currentSubjectIndex].stroke }}></div>
                     <span className="text-gray-600">Completed</span>
                   </div>
                   <span className="font-medium text-gray-800">{courseStats[currentSubjectIndex].completed}%</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                    <div className="w-2 h-2  bg-red-400"></div>
                     <span className="text-gray-600">Incompleted</span>
                   </div>
                   <span className="font-medium text-gray-800">{courseStats[currentSubjectIndex].incomplete}%</span>
@@ -679,7 +823,7 @@ const StudentDashboard = () => {
               </div>
             </div>
           ) : (
-            <div className="lg:col-span-1 bg-[#FFF8E5] p-5 rounded-2xl border border-yellow-100/50 shadow-sm flex flex-col items-center justify-center h-[22rem]">
+            <div className="lg:col-span-1 bg-[#FFF8E5] p-5  border border-yellow-100/50 shadow-sm flex flex-col items-center justify-center h-[22rem]">
               <p className="text-gray-500 font-medium">Loading courses...</p>
             </div>
           )}
@@ -690,12 +834,11 @@ const StudentDashboard = () => {
         {/* Achievements Section */}
         <div className="mt-8">
           <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Award className="text-yellow-500" />
             Your Achievements
           </h3>
 
           {earnedBadges.length > 0 || totalXP > 0 ? (
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+            <div className="bg-white  p-6 border border-gray-100 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <p className="text-gray-500 text-sm">Current Level</p>
@@ -714,14 +857,14 @@ const StudentDashboard = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Always show Module Badge Summary */}
-                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-center gap-3">
-                  <div className="p-3 bg-white rounded-full shadow-sm text-blue-500">
+                <div className="p-4  bg-blue-50 border border-blue-100 flex items-center gap-3">
+                  <div className="p-3 bg-white  shadow-sm text-blue-500">
                     <Award size={24} />
                   </div>
                   <div>
                     <h5 className="font-bold text-gray-800">Module Master</h5>
                     <p className="text-xs text-gray-500">Earned for finishing modules</p>
-                    <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full mt-1 inline-block">
+                    <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5  mt-1 inline-block">
                       {totalModulesCompleted} Badges
                     </span>
                   </div>
@@ -729,14 +872,14 @@ const StudentDashboard = () => {
 
                 {/* Subject Badges */}
                 {earnedBadges.map((badge) => (
-                  <div key={badge.id} className="p-4 rounded-xl bg-yellow-50 border border-yellow-100 flex items-center gap-3">
-                    <div className="p-3 bg-white rounded-full shadow-sm text-yellow-500">
+                  <div key={badge.id} className="p-4  bg-yellow-50 border border-yellow-100 flex items-center gap-3">
+                    <div className="p-3 bg-white  shadow-sm text-yellow-500">
                       {badge.icon}
                     </div>
                     <div>
                       <h5 className="font-bold text-gray-800">{badge.name}</h5>
                       <p className="text-xs text-gray-500">{badge.description}</p>
-                      <span className="text-xs font-medium text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full mt-1 inline-block">
+                      <span className="text-xs font-medium text-yellow-600 bg-yellow-100 px-2 py-0.5  mt-1 inline-block">
                         +{badge.xp} XP
                       </span>
                     </div>
@@ -745,13 +888,13 @@ const StudentDashboard = () => {
               </div>
             </div>
           ) : (
-            <div className="p-8 bg-white rounded-2xl border border-gray-100 text-center text-gray-500">
+            <div className="p-8 bg-white  border border-gray-100 text-center text-gray-500">
               <p>Complete modules to earn XP and Badges!</p>
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 };
 
