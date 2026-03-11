@@ -34,15 +34,16 @@ export default function AdminLogin() {
   return (
     <div className="relative min-h-screen overflow-x-hidden flex flex-col">
       {/* Background */}
-      <Image
-        src="/images/background2.svg"
-        alt="Background"
-        fill
-
-        className="object-cover object-top -z-10"
-        quality={100}
-        priority
-      />
+      <div className="fixed inset-0 -z-10 w-full h-full">
+        <Image
+          src="/images/background2.svg"
+          alt="Background"
+          fill
+          className="object-cover object-top"
+          quality={100}
+          priority
+        />
+      </div>
 
       <nav className="absolute top-0 left-0 w-full z-50 flex justify-between items-center p-6 md:px-16 lg:px-24">
         <div className="text-white text-2xl font-bold tracking-wider">

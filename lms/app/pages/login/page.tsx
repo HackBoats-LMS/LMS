@@ -11,13 +11,15 @@ const login = () => {
     <div className="relative min-h-screen overflow-x-hidden">
 
       {/* Background */}
-      <Image
-        src="/images/background2.svg"
-        alt="Background"
-        fill
-        className="object-cover object-top -z-10 h-full"
-        priority
-      />
+      <div className="fixed inset-0 -z-10 w-full h-full">
+        <Image
+          src="/images/background2.svg"
+          alt="Background"
+          fill
+          className="object-cover object-top"
+          priority
+        />
+      </div>
 
       <Navbar />
 
