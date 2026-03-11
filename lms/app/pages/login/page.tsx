@@ -22,7 +22,7 @@ const login = () => {
       <Navbar />
 
       {/* Hero Text Section */}
-      <div className="flex flex-col items-center justify-center text-center gap-6 pt-[15.5rem] px-4 md:px-0">
+      <div className="relative z-10 flex flex-col items-center justify-center text-center gap-6 pt-48 md:pt-64 px-4 md:px-0">
         <p className="text-white text-4xl font-monument">
           Learn skills that actually <br /> move you forward
         </p>
@@ -54,7 +54,7 @@ const login = () => {
       </div>
 
       {/* Hero Image Section */}
-      <div className="w-[80vw] mx-auto mt-40 pb-20 pointer-events-none ">
+      <div className="relative z-10 w-[80vw] mx-auto mt-20 md:mt-40 pb-20 pointer-events-none">
         <Image
           src="/Hero-SD.png"
           alt="Hero"

@@ -44,7 +44,7 @@ export default function AdminLogin() {
         priority
       />
 
-      <nav className="absolute top-0 left-0 w-full z-10 flex justify-between items-center p-6 px-30">
+      <nav className="absolute top-0 left-0 w-full z-50 flex justify-between items-center p-6 md:px-16 lg:px-24">
         <div className="text-white text-2xl font-bold tracking-wider">
           <Image
             src={"https://www.hackboats.com/images/logo.png"}
@@ -66,7 +66,7 @@ export default function AdminLogin() {
         </div>
       </nav>
 
-      <div className="flex-1 flex items-center justify-center px-4 pt-20">
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 pt-20">
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 p-8 rounded-2xl shadow-xl w-full max-w-md">
           <h1 className="text-3xl font-monument text-white mb-8 text-center uppercase tracking-wide">
             Admin Portal

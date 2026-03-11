@@ -6,7 +6,7 @@ import { signIn } from 'next-auth/react'
 const Navbar = () => {
     const router = useRouter()
     return (
-        <nav className="absolute top-0 left-0 w-full z-10 flex justify-between items-center p-6 px-30">
+        <nav className="absolute top-0 left-0 w-full z-50 flex justify-between items-center p-6 md:px-16 lg:px-24">
             <div className="text-white text-2xl font-bold tracking-wider">
                 <Image
                     src={"https://www.hackboats.com/images/logo.png"}
