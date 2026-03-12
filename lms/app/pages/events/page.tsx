@@ -155,9 +155,10 @@ const EventsPage = () => {
                 finalImageUrl = await uploadImage(imageFile);
             }
 
-            const { error } = await supabase
-                .from('events')
-                .insert([{
+            const res = await fetch('/api/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     title: formData.title,
                     description: formData.description,
                     type: formData.type,
@@ -165,9 +166,11 @@ const EventsPage = () => {
                     link: formData.link || null,
                     image_url: finalImageUrl || null,
                     created_at: new Date().toISOString()
-                }]);
+                })
+            });
 
-            if (error) throw error;
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || "Failed to add event");
 
             // Reset and refresh
             setFormData({
@@ -199,8 +202,10 @@ const EventsPage = () => {
                 await deleteImage(eventToDelete.image_url);
             }
 
-            const { error } = await supabase.from('events').delete().eq('id', id);
-            if (error) throw error;
+            const res = await fetch(`/api/events?id=${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || "Failed to delete event");
+
             fetchEvents();
         } catch (err) {
             console.error("Error deleting event:", err);
@@ -215,7 +220,7 @@ const EventsPage = () => {
 
     return (
         <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
-      <DashboardSidebar activePage="events" />
+            <DashboardSidebar activePage="events" />
 
             {/* Main Content Area */}
             <main className="flex-1 overflow-y-auto p-4 md:p-8">

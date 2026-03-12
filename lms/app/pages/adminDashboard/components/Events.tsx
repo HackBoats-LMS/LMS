@@ -31,11 +31,15 @@ export default function Events({ onBack }: { onBack: () => void }) {
     }, [session]);
 
     const fetchEvents = async () => {
-        const { data, error } = await supabase
-            .from('events')
-            .select('*')
-            .order('created_at', { ascending: false });
-        if (!error) setEvents(data || []);
+        try {
+            const res = await fetch("/api/events");
+            const response = await res.json();
+            if (response.success && response.data) {
+                setEvents(response.data);
+            }
+        } catch (error) {
+            console.error("Error fetching events:", error);
+        }
     };
 
     const uploadImage = async (file: File) => {
@@ -101,18 +105,18 @@ export default function Events({ onBack }: { onBack: () => void }) {
                 image_url: finalImageUrl || null,
             };
 
-            if (eventForm.id) {
-                const { error } = await supabase
-                    .from('events')
-                    .update(payload)
-                    .eq('id', eventForm.id);
-                if (error) throw error;
-            } else {
-                const { error } = await supabase
-                    .from('events')
-                    .insert([payload]);
-                if (error) throw error;
-            }
+            const url = "/api/events";
+            const method = eventForm.id ? "PUT" : "POST";
+            if (eventForm.id) payload.id = eventForm.id;
+
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const response = await res.json();
+            if (!response.success) throw new Error(response.error);
 
             fetchEvents();
             setShowEventModal(false);
@@ -133,11 +137,9 @@ export default function Events({ onBack }: { onBack: () => void }) {
                 await deleteImage(event.image_url);
             }
 
-            const { error } = await supabase
-                .from('events')
-                .delete()
-                .eq('id', event.id);
-            if (!error) fetchEvents();
+            const res = await fetch(`/api/events?id=${event.id}`, { method: "DELETE" });
+            const response = await res.json();
+            if (response.success) fetchEvents();
         } catch (error) {
             console.error("Error deleting event:", error);
         }

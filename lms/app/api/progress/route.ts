@@ -130,51 +130,52 @@ export async function GET(req: NextRequest) {
 
 //UPDATE USER STREAK FUNCTION
 
-export async function updateUserStreak(email: String) {
+export async function updateUserStreak(email: string) {
+  // Use IST (UTC+5:30) for consistent date comparisons if specifically targetting Indian users,
+  // or use a robust local date method.
+  const getLocalDateStr = (date: Date) => {
+    // Offset for IST (+5.5 hours)
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(date.getTime() + istOffset);
+    return istDate.toISOString().split('T')[0];
+  };
 
   const { data: user, error } = await supabase.from('users').select('currentStreak, lastActiveDate').eq('email', email).single();
 
   if (error || !user) return;
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = getLocalDateStr(today);
 
   const yesterday = new Date(today);
-
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const yesterdayStr = getLocalDateStr(yesterday);
 
-  const lastActive = user.lastActiveDate; // This is usually a string "YYYY-MM-DD" or null
-
-  // Safely get the last active date string without crashing on null
+  const lastActive = user.lastActiveDate;
   let lastActiveStr = null;
   if (lastActive) {
     lastActiveStr = typeof lastActive === 'string'
       ? lastActive.split('T')[0]
-      : new Date(lastActive).toISOString().split('T')[0];
+      : getLocalDateStr(new Date(lastActive));
   }
 
   let newStreak = user.currentStreak || 0;
 
   if (lastActiveStr === todayStr) {
-    // Scenario A: Already active today => Do nothing
+    // Already active today
     return newStreak;
   } else if (lastActiveStr === yesterdayStr) {
-    // Scenario B: Active yesterday => Increment
+    // Active yesterday => Increment
     newStreak += 1;
   } else {
-    // Scenario C: Missed a day or first time => Reset to 1
+    // Missed a day or first time
     newStreak = 1;
   }
 
-  await supabase.from('users').update(
-    {
-      currentStreak: newStreak,
-      lastActiveDate: todayStr
-    }
-  ).eq('email', email);
+  await supabase.from('users').update({
+    currentStreak: newStreak,
+    lastActiveDate: todayStr
+  }).eq('email', email);
 
   return newStreak;
-
-
 }

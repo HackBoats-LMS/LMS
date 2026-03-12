@@ -37,3 +37,79 @@ export async function GET() {
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function POST(req: Request) {
+    try {
+        const body = await req.json();
+        const { error } = await supabase
+            .from('events')
+            .insert([body]);
+
+        if (error) throw error;
+
+        // Invalidate Cache
+        if (redis) {
+            await redis.del(CACHE_KEY);
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error('POST /api/events error:', error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+export async function DELETE(req: Request) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
+        }
+
+        const { error } = await supabase
+            .from('events')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        // Invalidate Cache
+        if (redis) {
+            await redis.del(CACHE_KEY);
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error('DELETE /api/events error:', error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+export async function PUT(req: Request) {
+    try {
+        const body = await req.json();
+        const { id, ...updateData } = body;
+
+        if (!id) {
+            return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
+        }
+
+        const { error } = await supabase
+            .from('events')
+            .update(updateData)
+            .eq('id', id);
+
+        if (error) throw error;
+
+        // Invalidate Cache
+        if (redis) {
+            await redis.del(CACHE_KEY);
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error('PUT /api/events error:', error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}

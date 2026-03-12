@@ -105,11 +105,19 @@ const handler = NextAuth({
                         email: user.email,
                         fullName: user.name || "",
                         isAdmin: false,
-                        currentSemester: 1
+                        currentSemester: 1,
+                        createdAt: new Date().toISOString()
                     }).select().single();
 
                     if (newUser) {
                         token.id = newUser.id;
+                        // Invalidate cache
+                        try {
+                            const redis = (await import("@/lib/redis")).default;
+                            if (redis) await redis.del('students:all');
+                        } catch (e) {
+                            console.error("Redis invalidation failed in NextAuth:", e);
+                        }
                     }
                 }
             }

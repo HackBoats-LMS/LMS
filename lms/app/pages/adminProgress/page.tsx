@@ -81,7 +81,7 @@ export default function AdminProgress() {
         setLoading(true);
         try {
             // 1. Fetch Users
-            const usersRes = await fetch("/api/users/students");
+            const usersRes = await fetch(`/api/users/students?t=${Date.now()}`, { cache: 'no-store' });
             const usersData = await usersRes.json();
             const allUsers: UserData[] = usersData.success || usersData.ok ? usersData.data : [];
             const studentUsers = allUsers; // removed !u.isAdmin filter so you can see your own admin account

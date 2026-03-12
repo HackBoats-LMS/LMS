@@ -19,7 +19,8 @@ export async function POST() {
       fullName: "",
       phoneNumber: "",
       currentSemester: 4,
-      isAdmin: false
+      isAdmin: false,
+      createdAt: new Date().toISOString()
     }));
 
     const { error } = await supabase

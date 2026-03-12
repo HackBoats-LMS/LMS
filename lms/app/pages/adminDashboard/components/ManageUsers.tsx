@@ -21,7 +21,7 @@ export default function ManageUsers({ onBack }: { onBack: () => void }) {
     }, [session]);
 
     const fetchUsers = async () => {
-        const res = await fetch("/api/users/students");
+        const res = await fetch(`/api/users/students?t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         if (data.ok) {
             setUsers(data.data);

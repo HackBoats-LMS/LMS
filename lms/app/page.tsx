@@ -110,7 +110,7 @@ const StudentDashboard = () => {
   const CACHE_DURATIONS = {
     TIMETABLE: 24 * 60 * 60 * 1000, // 24 hours
     EVENTS: 60 * 60 * 1000,         // 1 hour
-    PROGRESS: 30 * 1000,            // 30 seconds
+    PROGRESS: 15 * 1000,            // 15 seconds
     SUBJECTS: 5 * 60 * 1000         // 5 minutes
   };
 
@@ -156,7 +156,7 @@ const StudentDashboard = () => {
 
   const fetchLeaderboard = async () => {
     try {
-      const res = await fetch("/api/leaderboard");
+      const res = await fetch(`/api/leaderboard?t=${Date.now()}`);
       const data = await res.json();
       if (data.success && data.data) {
         setLeaderboard(data.data);
@@ -169,13 +169,10 @@ const StudentDashboard = () => {
   const fetchStreak = async () => {
     try {
       if (!session?.user?.email) return;
-      const { data, error } = await supabase
-        .from("users")
-        .select("currentStreak")
-        .eq("email", session.user.email)
-        .single();
-      if (data && !error) {
-        setDayStreak(data.currentStreak || 0);
+      const res = await fetch(`/api/users/streak?email=${encodeURIComponent(session.user.email)}`);
+      const data = await res.json();
+      if (data.success) {
+        setDayStreak(data.streak || 0);
       }
     } catch (e) {
       console.error("Failed to fetch streak", e);
@@ -185,7 +182,7 @@ const StudentDashboard = () => {
   const fetchContinueLearning = async () => {
     try {
       if (!session?.user?.email) return;
-      const res = await fetch(`/api/progress/continue?email=${encodeURIComponent(session.user.email)}`);
+      const res = await fetch(`/api/progress/continue?email=${encodeURIComponent(session.user.email)}&t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success && data.data) {
         setContinueProgress(data.data);
@@ -244,7 +241,7 @@ const StudentDashboard = () => {
     }
 
     try {
-      const res = await fetch(`/api/progress?userEmail=${session?.user?.email}`);
+      const res = await fetch(`/api/progress?userEmail=${session?.user?.email}&t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
 
       if (data.success && Array.isArray(data.data)) {
@@ -593,13 +590,26 @@ const StudentDashboard = () => {
                 <div className="mt-auto space-y-5">
                   {/* Matching Dashboard Progress Bar */}
                   <div>
-                    <div className="flex justify-between text-sm mb-2 font-bold">
-                      <span className="text-gray-700">Overall Progress</span>
-                      <span className="text-blue-600">{continueProgress.percentage || 0}%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                      <div className="h-full rounded-full bg-blue-500 transition-all duration-500" style={{ width: `${continueProgress.percentage || 0}%` }}></div>
-                    </div>
+                    {(() => {
+                      // Find the actual calculated progress for this specific subject from our stats
+                      const subjectStat = courseStats.find(s => s.name === continueProgress.subject);
+                      const displayProgress = subjectStat ? subjectStat.completed : (continueProgress.percentage || 0);
+
+                      return (
+                        <>
+                          <div className="flex justify-between text-sm mb-2 font-bold">
+                            <span className="text-gray-700">Course Progress</span>
+                            <span className="text-blue-600 font-black">{displayProgress}%</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-blue-500 transition-all duration-700 ease-out"
+                              style={{ width: `${displayProgress}%` }}
+                            ></div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Matching Dashboard Button Link */}
@@ -651,8 +661,25 @@ const StudentDashboard = () => {
                     {isCurrentUser && (
                       <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-r-full"></div>
                     )}
-                    <div className={`w-8 h-8 rounded-full flex flex-shrink-0 items-center justify-center font-bold text-sm shadow-sm ${idx === 0 ? 'bg-yellow-100 text-yellow-600' : idx === 1 ? 'bg-gray-200 text-gray-600' : idx === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
-                      #{idx + 1}
+                    <div className="relative">
+                      {idx === 0 && (
+                        <div className="absolute -top-5 -left-1 -rotate-12 z-20">
+                          <img src="/icons/crowngold.svg" className="w-7 h-7" alt="Gold Crown" />
+                        </div>
+                      )}
+                      {idx === 1 && (
+                        <div className="absolute -top-5 -left-1 -rotate-12 z-20">
+                          <img src="/icons/crownsilver.svg" className="w-7 h-7" alt="Silver Crown" />
+                        </div>
+                      )}
+                      {idx === 2 && (
+                        <div className="absolute -top-5 -left-1 -rotate-12 z-20">
+                          <img src="/icons/crownbronze.svg" className="w-7 h-7" alt="Bronze Crown" />
+                        </div>
+                      )}
+                      <div className={`w-8 h-8 rounded-full flex flex-shrink-0 items-center justify-center font-bold text-sm shadow-sm ${idx === 0 ? 'bg-yellow-100 text-yellow-600' : idx === 1 ? 'bg-gray-200 text-gray-600' : idx === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-500 border border-gray-200'}`}>
+                        #{idx + 1}
+                      </div>
                     </div>
                     <div className={`w-10 h-10 rounded-full ${isCurrentUser ? 'bg-blue-500 text-white border-blue-600' : 'bg-blue-50 text-blue-500 border-blue-100'} overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm border relative`}>
                       <span className="font-bold text-sm uppercase">{user.fullName ? user.fullName.substring(0, 2) : "UN"}</span>

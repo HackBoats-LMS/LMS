@@ -1,0 +1,8 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Crown Base Bar -->
+  <rect x="0" y="220" width="256" height="28" rx="14" fill="#CD7F32"/>
+  <!-- Crown Body -->
+  <path d="M0 180C0 191.046 8.9543 200 20 200H236C247.046 200 256 191.046 256 180V60C256 50 245 45 238 52L192 100L144 32C138 24 118 24 112 32L64 100L18 52C11 45 0 50 0 60V180Z" fill="#CD7F32"/>
+  <!-- Shine/Highlights -->
+  <path d="M40 180H216V170H40V180Z" fill="white" fill-opacity="0.3"/>
+</svg>
