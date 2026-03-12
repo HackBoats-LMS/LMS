@@ -8,12 +8,12 @@ import Link from 'next/link';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import {
     LayoutDashboard, BookOpen, CreditCard, LogOut, User,
-    ChevronRight, ChevronDown, CheckCircle2, FileText
+    ChevronRight, ChevronDown, CheckCircle2, FileText, Menu
 } from 'lucide-react';
 
-import Video1 from '../../fswd/components/Video1';
-import Quiz from '../../fswd/components/Quiz';
-import '../../fswd/styles.css';
+import Video1 from '@/components/Video1';
+import Quiz from '@/components/Quiz';
+import './styles.css';
 
 interface Question {
     question: string;
@@ -42,6 +42,7 @@ interface SubjectData {
     modules: ModuleData[];
 }
 
+
 const DynamicCoursePage = () => {
     const params = useParams();
     const router = useRouter();
@@ -53,6 +54,8 @@ const DynamicCoursePage = () => {
     const [currentModuleIndex, setCurrentModuleIndex] = useState<number | null>(null);
     const [videoCompleted, setVideoCompleted] = useState(false);
     const [studentProgress, setStudentProgress] = useState<any[]>([]);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
 
     useEffect(() => {
         if (params.id) {
@@ -102,6 +105,13 @@ const DynamicCoursePage = () => {
             }
         } catch (error) {
             console.error("Failed to fetch progress", error);
+        }
+    };
+
+    // Re-fetch progress after quiz completion so Next Module button updates immediately
+    const refreshProgress = () => {
+        if (session?.user?.email && subject) {
+            fetchStudentProgress(session.user.email, subject.name);
         }
     };
 
@@ -263,17 +273,26 @@ const DynamicCoursePage = () => {
 
     return (
         <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
-            <DashboardSidebar activePage="courses" />
+            <DashboardSidebar activePage="courses" isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {/* Header */}
                 <header className="flex justify-between items-center mb-8 px-8 pt-8">
-                    <div className="flex items-center gap-2">
-                        <Link href="/pages/courses" className="text-sm text-gray-500 hover:text-[#FF5B5B]">Courses</Link>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
-                        <h1 className="text-2xl font-bold text-gray-800">{subject.name}</h1>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden"
+                        >
+                            <Menu size={24} />
+                        </button>
+                        <div className="flex items-center gap-2">
+                            <Link href="/pages/courses" className="text-sm text-gray-500 hover:text-[#FF5B5B]">Courses</Link>
+                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                            <h1 className="text-2xl font-bold text-gray-800 line-clamp-1">{subject.name}</h1>
+                        </div>
                     </div>
+
 
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-3">
@@ -312,13 +331,15 @@ const DynamicCoursePage = () => {
                                 {currentModule.quiz && (
                                     <div className="pt-8 border-t border-gray-100">
                                         <Quiz
+                                            key={`quiz-module-${currentModuleIndex}`}
                                             title={currentModule.quiz.title}
                                             questions={currentModule.quiz.questions}
                                             subject={subject.name}
-                                            unitId={1} // Assuming single unit for dynamic subjects for now
+                                            unitId={1}
                                             moduleId={currentModuleIndex! + 1}
                                             moduleName={currentModule.name}
                                             isLocked={!videoCompleted}
+                                            onQuizComplete={refreshProgress}
                                         />
                                     </div>
                                 )}
@@ -352,7 +373,7 @@ const DynamicCoursePage = () => {
                                                     ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
                                                     : 'bg-gray-300 cursor-not-allowed shadow-none'
                                                 }`}
-                                            title={!isCurrentCompleted ? "Complete the video and quiz to proceed" : ""}
+                                            title={!isCurrentCompleted ? "Complete the video , quiz , and get min 60% marks to proceed" : ""}
                                         >
                                             {currentModuleIndex! < subject.modules.length - 1 ? 'Next Module →' : 'Finish Course'}
                                         </button>

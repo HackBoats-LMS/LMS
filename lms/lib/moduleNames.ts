@@ -110,43 +110,6 @@ export const MODULE_NAMES: { [subject: string]: { [unitId: number]: { [moduleId:
       5: "Digital Citizenship Activities"
     }
   },
-  OS: {
-    1: {
-      1: "Overview of Operating Systems",
-      2: "OS Types and Generation",
-      3: "OS Operations & Security",
-      4: "System Calls & Structures",
-      5: "Unit 1 Quiz"
-    },
-    2: {
-      1: "Process Concepts",
-      2: "Process Scheduling",
-      3: "Scheduling Algorithms",
-      4: "Multithreading & IPC",
-      5: "Unit 2 Quiz"
-    },
-    3: {
-      1: "Concurrency Principles",
-      2: "Process Synchronization",
-      3: "Deadlock Principles",
-      4: "Deadlock Handling",
-      5: "Unit 3 Quiz"
-    },
-    4: {
-      1: "Memory Allocation",
-      2: "Paging & Segmentation",
-      3: "Virtual Memory",
-      4: "Page Replacement",
-      5: "Unit 4 Quiz"
-    },
-    5: {
-      1: "File System Interface",
-      2: "Directory Structure",
-      3: "Mass Storage Structure",
-      4: "Disk Scheduling",
-      5: "Unit 5 Quiz"
-    }
-  },
   LS: {
     1: {
       1: "Overview of Linguistics and its Sub-fields",
@@ -180,30 +143,6 @@ export const MODULE_NAMES: { [subject: string]: { [unitId: number]: { [moduleId:
       3: "Language and Power",
       4: "Language and Globalization",
       5: "Unit 5 Quiz"
-    }
-  },
-  FSWD: {
-    1: {
-      1: "Setting up React with Vite - Introduction",
-      2: "Setting up React with Vite - Deep-dive #1",
-      3: "Setting up React with Vite - Deep-dive #2",
-      4: "Practice Assignment #1",
-      5: "Practice Assignment #2",
-      6: "Follow-along Milestone #15",
-      7: "Follow-along Milestone #16",
-      8: "ASAP Project - Setup",
-      9: "Knowledge Review #5"
-    },
-    2: {
-      1: "Deploying Frontend - Introduction",
-      2: "Deploying Frontend - Deep-dive #1 (Vercel)",
-      3: "Deploying Frontend - Deep-dive #2 (Netlify)",
-      4: "Practice Assignment #1",
-      5: "Practice Assignment #2",
-      6: "Follow-along Milestone #17",
-      7: "Follow-along Milestone #18",
-      8: "ASAP Project - Deploy",
-      9: "Knowledge Review #6"
     }
   }
 };

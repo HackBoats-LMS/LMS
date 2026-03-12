@@ -15,9 +15,12 @@ import {
     User,
     ChevronRight,
     Search,
-    Download
+    Download,
+    Menu,
+    X
 } from 'lucide-react';
 import * as XLSX from "xlsx"; // Useful if they want to export, but we'll conditionally use it or mock download
+
 
 interface UserData {
     email: string;
@@ -54,6 +57,8 @@ export default function AdminProgress() {
     const [searchTerm, setSearchTerm] = useState("");
     const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
 
     // Sidebar Config
     const sidebarItems = [
@@ -232,10 +237,29 @@ export default function AdminProgress() {
 
     return (
         <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
+            {/* Mobile Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden transition-opacity"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar (Matching AdminDashboard) */}
-            <aside className="w-64 bg-white border-r border-gray-100 flex flex-col p-6 hidden md:flex">
-                <div className="flex items-center gap-2 mb-10 text-[#FF5B5B]">
+            <aside className={`
+                fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-100 flex flex-col p-6 
+                transition-transform duration-300 ease-in-out
+                md:relative md:translate-x-0 md:z-auto md:shrink-0
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            `}>
+                <div className="flex items-center justify-between mb-10 text-[#FF5B5B]">
                     <span className="text-2xl font-bold">LMS Admin</span>
+                    <button
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="p-2 -mr-2 text-gray-400 hover:text-gray-600 md:hidden"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
                 <nav className="flex-1 space-y-1">
@@ -243,6 +267,7 @@ export default function AdminProgress() {
                         <Link
                             key={item.id}
                             href={item.link}
+                            onClick={() => setIsSidebarOpen(false)}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors w-full text-left ${item.id === "progress" ? 'bg-[#FFF0F0] text-[#FF5B5B]' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
                         >
                             <span className={item.id === "progress" ? "text-[#FF5B5B]" : "text-gray-400"}>{item.icon}</span>
@@ -269,10 +294,19 @@ export default function AdminProgress() {
             <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
                 {/* Header */}
                 <header className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800">Student Progress</h1>
-                        <p className="text-sm text-gray-500 mt-1">Track and analyze individual student performance across all courses.</p>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden"
+                        >
+                            <Menu size={24} />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-800 line-clamp-1">Student Progress</h1>
+                            <p className="text-sm text-gray-500 mt-1 hidden sm:block">Track and analyze individual student performance across all courses.</p>
+                        </div>
                     </div>
+
 
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-3">

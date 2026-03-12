@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import DashboardSidebar from '@/components/DashboardSidebar';
 import {
+  Menu,
   Search,
   Bell,
   User,
@@ -62,6 +63,7 @@ const CoursesPage = () => {
   const { data: session } = useSession();
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 
   useEffect(() => {
@@ -151,16 +153,25 @@ const CoursesPage = () => {
 
   return (
     <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
-      <DashboardSidebar activePage="courses" />
+      <DashboardSidebar activePage="courses" isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden p-4 md:p-8">
         {/* Header */}
         <header className="flex-none flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">My Courses</h1>
-            <p className="text-sm text-gray-500 mt-1">Pick up where you left off</p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden"
+            >
+              <Menu size={24} />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 line-clamp-1">My Courses</h1>
+              <p className="text-sm text-gray-500 mt-1 hidden sm:block">Pick up where you left off</p>
+            </div>
           </div>
+
 
           <div className="flex items-center gap-6">
             <div className="relative hidden md:block">
@@ -171,11 +182,6 @@ const CoursesPage = () => {
                 className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5B5B]/20 w-64 shadow-sm"
               />
             </div>
-
-            <button className="relative p-2 bg-white rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50">
-              <Bell size={20} />
-              <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-[#FF5B5B] rounded-full border-2 border-white"></span>
-            </button>
 
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-gray-700 hidden sm:block">{session?.user?.name || "Student"}</span>

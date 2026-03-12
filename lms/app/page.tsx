@@ -24,7 +24,8 @@ import {
   Zap,
   Globe,
   Award,
-  PlayCircle
+  PlayCircle,
+  Menu
 } from 'lucide-react';
 
 // --- Types ---
@@ -39,6 +40,7 @@ interface TimetableData {
   [key: string]: TimetableSlot[];
 }
 
+
 const StudentDashboard = () => {
   const { data: session } = useSession();
   const [timetable, setTimetable] = useState<TimetableData | null>(null);
@@ -47,6 +49,8 @@ const StudentDashboard = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [allSubjects, setAllSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
 
   // Leaderboard State
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -497,13 +501,22 @@ const StudentDashboard = () => {
 
   return (
     <div className="flex h-screen bg-[#F5F5F7] font-sans text-gray-900 overflow-hidden">
-      <DashboardSidebar activePage="dashboard" />
+      <DashboardSidebar activePage="dashboard" isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
         {/* Header */}
         <header className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden"
+            >
+              <Menu size={24} />
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          </div>
+
 
           <div className="flex items-center gap-6">
 
@@ -511,8 +524,11 @@ const StudentDashboard = () => {
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-gray-700 hidden sm:block">{session?.user?.name || "Student"}</span>
               <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
-
-                <User className="text-gray-400" />
+                {session?.user?.image ? (
+                  <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="text-gray-400" />
+                )}
               </div>
             </div>
           </div>
