@@ -103,63 +103,64 @@ export const CertificateTemplate: React.FC<CertificateTemplateProps> = ({
                 <RightBar />
 
                 {/* Main Content Container */}
-                <div className="relative h-full flex flex-col items-center justify-center px-24 py-12">
+                <div className="relative h-full flex flex-col items-center justify-center px-[96px] py-[48px]">
 
                     {/* Logo */}
-                    <div className="mb-12">
+                    <div className="mb-[48px]">
                         <HackBoatsLogo />
                     </div>
 
                     {/* Certificate Title */}
-                    <div className="text-center mb-8">
-                        <h1 className={`${orbitron.className} text-6xl text-black tracking-wider mb-2`}>
+                    <div className="text-center mb-[32px]">
+                        <h1 className={`${orbitron.className} text-[60px] text-black tracking-wider mb-[8px]`}>
                             CERTIFICATE
                         </h1>
-                        <p className={`${orbitron.className} text-lg text-gray-600 tracking-widest uppercase`}>
+                        <p className={`${orbitron.className} text-[18px] text-gray-600 tracking-widest uppercase`}>
                             OF COMPLETION
                         </p>
                     </div>
 
                     {/* Certification Text */}
-                    <div className="text-center space-y-6">
-                        <p className={`${ibmPlexSans.className} text-lg text-gray-700 font-light uppercase tracking-[0.2em]`}>
+                    <div className="text-center space-y-[24px]">
+                        <p className={`${ibmPlexSans.className} text-[18px] text-gray-700 font-light uppercase tracking-[0.2em]`}>
                             This certifies that
                         </p>
 
                         {/* Recipient Name */}
-                        <h2 className={`${ibmPlexSans.className} text-5xl font-bold text-black border-b-[3px] border-black/5 pb-2 inline-block px-10`}>
+                        <h2 className={`${ibmPlexSans.className} text-[48px] font-bold text-black border-b-[3px] border-black/5 pb-[8px] inline-block px-[40px]`}>
                             {recipientName.toUpperCase()}
                         </h2>
 
-                        <p className={`${ibmPlexSans.className} text-lg text-gray-700 font-light uppercase tracking-[0.2em]`}>
+                        <p className={`${ibmPlexSans.className} text-[18px] text-gray-700 font-light uppercase tracking-[0.2em]`}>
                             has successfully completed
                         </p>
 
                         {/* Course Name */}
-                        <h3 className={`${ibmPlexSans.className} text-4xl font-semibold text-[#FF5B5B] my-4`}>
+                        <h3 className={`${ibmPlexSans.className} text-[36px] font-semibold text-[#FF5B5B] my-[16px]`}>
                             {courseName}
                         </h3>
 
-                        <p className={`${ibmPlexSans.className} text-xs text-gray-400 tracking-[0.3em] font-medium`}>
+                        <p className={`${ibmPlexSans.className} text-[12px] text-gray-400 tracking-[0.3em] font-medium`}>
                             HACKBOATS LEARNING PLATFORM
                         </p>
                     </div>
 
                     {/* Bot Face (Very Left and Bottom) */}
-                    <div className="absolute -bottom-1 left-8 opacity-80 scale-75 origin-bottom-left leading-[0]">
+                    <div className="absolute -bottom-1 left-[32px] opacity-80 scale-75 origin-bottom-left leading-[0]">
                         <BotFace />
                     </div>
 
                     {/* Bottom Section (Stamp & ID) */}
-                    <div className="absolute bottom-12 right-24 flex flex-col items-center gap-2">
+                    <div className="absolute bottom-[48px] right-[96px] flex flex-col items-center gap-[8px]">
                         <CertificationStamp />
-                        <div className="text-black font-mono text-[10px] tracking-widest uppercase border-t border-gray-100 pt-1 mt-2">
+                        <div className="text-black font-mono text-[10px] tracking-widest uppercase border-t border-gray-100 pt-[4px] mt-[8px]">
                             ID: {certificateId}
                         </div>
-                        <div className="text-black font-mono text-[9px] tracking-widest uppercase">
+                        <div className="text-black font-mono text-[7px] tracking-widest uppercase">
+                        
                             verify at {process.env.NEXT_PUBLIC_SITE_URL}certification/verify
                         </div>
-                        <div className="text-[10px] text-black font-mono mt-0.5">{date}</div>
+                        <div className="text-[10px] text-black font-mono mt-[2px]">{date}</div>
                     </div>
                 </div>
             </div>
