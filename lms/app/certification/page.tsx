@@ -96,26 +96,29 @@ function CertificateContent() {
 
         try {
             const opt = {
-                margin: [0, 0, 0, 0], // Explicitly zero out all margins
+                margin: [0, 0, 0, 0],
                 filename: `HB_CERT_${certId}.pdf`,
                 image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: {
-                    scale: 3,
+                    scale: 2, // Desktop uses 3, but 2 is safer for mobile memory and still high quality
                     useCORS: true,
                     letterRendering: true,
                     logging: false,
                     backgroundColor: '#ffffff',
                     width: 1122,
                     height: 794,
-                    // Fix the capture window to avoid DPI/Scaling bugs
                     windowWidth: 1122,
-                    windowHeight: 794
+                    windowHeight: 794,
+                    scrollX: 0,
+                    scrollY: 0,
+                    x: 0,
+                    y: 0
                 },
                 jsPDF: {
                     unit: 'px',
                     format: [1122, 794],
                     orientation: 'landscape',
-                    hotfixes: ["px_scaling"] // Important fix for Chrome scaling
+                    hotfixes: ["px_scaling"]
                 },
                 pagebreak: { mode: 'avoid-all' }
             };
@@ -191,9 +194,12 @@ function CertificateContent() {
                         visibility: visible !important;
                         width: 1122px !important;
                         height: 794px !important;
-                        transform: scale(1.05) !important; /* Slight boost to fill A4 safe area */
-                        transform-origin: center center !important;
+                        transform-origin: top left !important;
                         box-shadow: none !important;
+                        background: white !important;
+                        /* Prevent mobile text scaling */
+                        -webkit-text-size-adjust: 100% !important;
+                        text-size-adjust: 100% !important;
                     }
                 }
             `}} />
