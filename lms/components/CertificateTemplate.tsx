@@ -156,8 +156,8 @@ export const CertificateTemplate: React.FC<CertificateTemplateProps> = ({
                         <div className="text-black font-mono text-[10px] tracking-widest uppercase border-t border-gray-100 pt-1 mt-2">
                             ID: {certificateId}
                         </div>
-                        <div className="text-black font-mono text-[12px] tracking-widest uppercase">
-                            verify at {process.env.NEXT_PUBLIC_SITE_URL}/certification/verify
+                        <div className="text-black font-mono text-[9px] tracking-widest uppercase">
+                            verify at {process.env.NEXT_PUBLIC_SITE_URL}certification/verify
                         </div>
                         <div className="text-[10px] text-black font-mono mt-0.5">{date}</div>
                     </div>
