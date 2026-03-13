@@ -8,7 +8,7 @@ import Link from 'next/link';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import {
     LayoutDashboard, BookOpen, CreditCard, LogOut, User,
-    ChevronRight, ChevronDown, CheckCircle2, FileText, Menu
+    ChevronRight, ChevronDown, CheckCircle2, FileText, Menu, Award
 } from 'lucide-react';
 
 import Video1 from '@/components/Video1';
@@ -148,6 +148,28 @@ const DynamicCoursePage = () => {
                     <div className="text-xs font-medium text-gray-500">{completedPercentage}% Completed</div>
                 </div>
             </div>
+
+            {/* Certificate Boost Section - Appears only when 100% completed */}
+            {completedPercentage === 100 && (
+                <div className="bg-gradient-to-r from-[#FF5B5B] to-[#FF8C8C] p-8 rounded-2xl shadow-lg border border-[#FF5B5B]/20 flex flex-col md:flex-row justify-between items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-inner">
+                            <Award className="text-white w-10 h-10" />
+                        </div>
+                        <div className="text-white">
+                            <h3 className="text-xl font-bold mb-1">Course Perfect!</h3>
+                            <p className="text-white/80 text-sm">You have mastered <b>{subject.name}</b>. Your official verified certificate is ready.</p>
+                        </div>
+                    </div>
+                    <Link
+                        href={`/certification?name=${encodeURIComponent(session?.user?.name || 'Student')}&course=${encodeURIComponent(subject.name)}&userId=${encodeURIComponent(session?.user?.id || session?.user?.email || 'unknown')}&courseId=${encodeURIComponent(subject._id)}`}
+                        className="bg-white text-[#FF5B5B] px-8 py-3 rounded-xl font-bold text-sm shadow-md hover:bg-gray-50 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2"
+                    >
+                        Claim My Certificate
+                        <ChevronRight size={18} />
+                    </Link>
+                </div>
+            )}
 
             {/* Navigation Tabs */}
             <div className="flex gap-6 border-b border-gray-200 overflow-x-auto pb-1">
