@@ -6,7 +6,7 @@ export async function GET() {
         // Fetch directly from DB for real-time accuracy in admin dashboard
         const { data: users, error } = await supabase
             .from('users')
-            .select('id, email, fullName, phoneNumber, currentSemester, isAdmin, createdAt')
+            .select('id, email, fullName, phoneNumber, college, currentSemester, isAdmin, createdAt')
             .order('createdAt', { ascending: false });
 
         if (error) throw error;

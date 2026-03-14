@@ -53,3 +53,22 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Simple scrollbar for entire site */
+
+::-webkit-scrollbar {
+  width: 0px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a; /* track color */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E65D25; /* scrollbar color */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}

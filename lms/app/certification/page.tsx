@@ -98,9 +98,9 @@ function CertificateContent() {
             const opt = {
                 margin: [0, 0, 0, 0],
                 filename: `HB_CERT_${certId}.pdf`,
-                image: { type: 'jpeg', quality: 1.0 },
+                image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: {
-                    scale: 2, // Desktop uses 3, but 2 is safer for mobile memory and still high quality
+                    scale: 2, 
                     useCORS: true,
                     letterRendering: true,
                     logging: false,
@@ -116,11 +116,11 @@ function CertificateContent() {
                 },
                 jsPDF: {
                     unit: 'px',
-                    format: [1122, 794],
+                    format: [1122, 795], // 1px buffer to prevent extra page on mobile
                     orientation: 'landscape',
                     hotfixes: ["px_scaling"]
                 },
-                pagebreak: { mode: 'avoid-all' }
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
             await html2pdf().set(opt).from(ghostElement).save();
@@ -160,10 +160,12 @@ function CertificateContent() {
                     html, body { 
                         margin: 0 !important; 
                         padding: 0 !important; 
-                        height: 100% !important; 
+                        height: 794px !important; 
+                        width: 1122px !important;
                         -webkit-print-color-adjust: exact !important; 
                         print-color-adjust: exact !important;
                         background: white !important;
+                        overflow: hidden !important;
                     }
                     
                     /* Hide ALL UI elements */
@@ -176,27 +178,30 @@ function CertificateContent() {
                     }
 
                     #print-portal-source {
-                        position: fixed !important;
+                        position: absolute !important;
                         top: 0 !important;
                         left: 0 !important;
-                        width: 100vw !important;
-                        height: 100vh !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
+                        width: 1122px !important;
+                        height: 794px !important;
+                        display: block !important;
                         z-index: 999999 !important;
                         background: white !important;
                         visibility: visible !important;
+                        page-break-after: avoid !important;
+                        page-break-before: avoid !important;
                     }
 
                     #certificate-ghost-capture {
-                        position: relative !important;
+                        position: absolute !important;
+                        top: 0 !important;
+                        left: 0 !important;
                         visibility: visible !important;
                         width: 1122px !important;
                         height: 794px !important;
                         transform-origin: top left !important;
                         box-shadow: none !important;
                         background: white !important;
+                        overflow: hidden !important;
                         /* Prevent mobile text scaling */
                         -webkit-text-size-adjust: 100% !important;
                         text-size-adjust: 100% !important;
@@ -240,8 +245,12 @@ function CertificateContent() {
                 </div>
 
                 {/* THE EXPORT SOURCE (Invisible in UI, the only thing that shows in Print) */}
-                <div id="print-portal-source" className="fixed top-0 left-0 opacity-0 pointer-events-none print:opacity-100">
-                    <div id="certificate-ghost-capture" className="bg-white">
+                <div 
+                    id="print-portal-source" 
+                    className="fixed top-0 left-0 opacity-0 pointer-events-none print:opacity-100 z-[-1]"
+                    style={{ width: '1122px', height: '794px' }}
+                >
+                    <div id="certificate-ghost-capture" style={{ width: '1122px', height: '794px', overflow: 'hidden', backgroundColor: 'white' }}>
                         <CertificateTemplate recipientName={recipientName} courseName={courseName} date={new Date().toLocaleDateString()} certificateId={certId} />
                     </div>
                 </div>

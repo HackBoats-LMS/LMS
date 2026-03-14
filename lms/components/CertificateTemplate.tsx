@@ -81,7 +81,7 @@ export const CertificateTemplate: React.FC<CertificateTemplateProps> = ({
     certificateId = 'HB-2024-001',
 }) => {
     return (
-        <div className={`${orbitron.variable} ${ibmPlexSans.variable} font-sans`}>
+        <div className={`${orbitron.variable} ${ibmPlexSans.variable} font-sans block leading-none`}>
             {/* 
                 THE PREMIER LAYOUT
                 Fixed pixels (1122x794) for unshakeable A4 Landscape quality.
@@ -157,8 +157,10 @@ export const CertificateTemplate: React.FC<CertificateTemplateProps> = ({
                             ID: {certificateId}
                         </div>
                         <div className="text-black font-mono text-[7px] tracking-widest uppercase">
-                        
-                            verify at {process.env.NEXT_PUBLIC_SITE_URL}certification/verify
+
+                            <div className='flex justify-center align-center items-center'>
+                                verify at 
+                            </div>{process.env.NEXT_PUBLIC_SITE_URL}certification/verify
                         </div>
                         <div className="text-[10px] text-black font-mono mt-[2px]">{date}</div>
                     </div>

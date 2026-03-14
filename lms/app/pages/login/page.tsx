@@ -58,7 +58,7 @@ const login = () => {
       {/* Hero Image Section */}
       <div className="relative z-10 w-[80vw] mx-auto mt-20 md:mt-40 pb-20 pointer-events-none">
         <Image
-          src="/Hero-SD.png"
+          src="/student-dashboard.png"
           alt="Hero"
           width={1920}
           height={1080}

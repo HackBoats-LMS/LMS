@@ -33,6 +33,7 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         if (req.nextUrl.pathname === "/pages/adminLogin") return true;
+        if (req.nextUrl.pathname === "/pages/access-denied") return true;
         return !!token;
       },
     },
@@ -43,5 +44,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/", "/pages/((?!login|adminLogin).*)"],
+  matcher: ["/", "/pages/((?!login|adminLogin|access-denied).*)"],
 };

@@ -227,13 +227,13 @@ const EventsPage = () => {
             <DashboardSidebar activePage="events" isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
             {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto p-4 md:p-8">
+            <main className="flex-1 overflow-y-auto p-4 xl:p-8">
                 {/* Header */}
                 <header className="flex justify-between items-center mb-8">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
-                            className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden"
+                            className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg xl:hidden"
                         >
                             <Menu size={24} />
                         </button>
@@ -245,7 +245,7 @@ const EventsPage = () => {
 
 
                     <div className="flex items-center gap-6">
-                        <div className="relative hidden md:block">
+                        <div className="relative hidden xl:block">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                             <input
                                 type="text"

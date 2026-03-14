@@ -504,13 +504,13 @@ const StudentDashboard = () => {
       <DashboardSidebar activePage="dashboard" isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+      <main className="flex-1 overflow-y-auto p-4 lg:p-8">
         {/* Header */}
         <header className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden"
+              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg xl:hidden"
             >
               <Menu size={24} />
             </button>

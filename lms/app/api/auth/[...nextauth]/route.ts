@@ -42,6 +42,7 @@ const handler = NextAuth({
     },
     pages: {
         signIn: '/pages/login',
+        error: '/pages/access-denied',
     },
     callbacks: {
         async signIn({ user, account, profile }) {
@@ -49,6 +50,28 @@ const handler = NextAuth({
                 const email = user.email;
 
                 if (!email) return false;
+
+                // Check Access Mode from Redis
+                try {
+                    const redis = (await import("@/lib/redis")).default;
+                    if (redis) {
+                        const accessMode = await redis.get('config:access_mode');
+                        if (accessMode === 'database_only') {
+                            const { data: existingUser } = await supabase
+                                .from('users')
+                                .select('id')
+                                .eq('email', email)
+                                .single();
+
+                            if (!existingUser) {
+                                console.log(`Access Denied (database_only mode): ${email}`);
+                                return false;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error checking access mode:", e);
+                }
 
                 // Store login type in user object for later use
                 (user as any).loginType = 'student';
