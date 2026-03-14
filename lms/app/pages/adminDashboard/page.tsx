@@ -30,6 +30,7 @@ import ManageUsers from "./components/ManageUsers";
 import Timetable from "./components/Timetable";
 import Events from "./components/Events";
 import AddSubject from "./components/AddSubject";
+import Settings from "./components/Settings";
 
 // --- Types ---
 interface StatsData {
@@ -75,6 +76,7 @@ export default function AdminDashboard() {
         { id: "addSubject", name: "Manage Subjects", icon: <BookOpen size={20} /> },
         { id: "progress", name: "Student Progress", icon: <BarChart size={20} />, link: "/pages/adminProgress" },
         { id: "courses", name: "Courses", icon: <BookOpen size={20} />, link: "/pages/courses" },
+        { id: "settings", name: "Settings", icon: <CreditCard size={20} /> },
     ];
 
     useEffect(() => {
@@ -547,6 +549,7 @@ export default function AdminDashboard() {
                         {activeTab === "users" && <ManageUsers onBack={() => setActiveTab("dashboard")} />}
                         {activeTab === "timetable" && <Timetable onBack={() => setActiveTab("dashboard")} />}
                         {activeTab === "addSubject" && <AddSubject onBack={() => setActiveTab("dashboard")} />}
+                        {activeTab === "settings" && <Settings onBack={() => setActiveTab("dashboard")} />}
                     </div>
                 )}
             </main>

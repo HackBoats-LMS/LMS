@@ -7,7 +7,7 @@ const ALLOWED_DOMAINS: string[] = []; // Example: ['ggu.edu.in', 'gmail.com']
 
 export async function POST(req: Request) {
   try {
-    const { email, isAdmin, password } = await req.json();
+    const { email, isAdmin, password, college } = await req.json();
     console.log(`API User Add: Attempting to add ${email} (isAdmin: ${isAdmin})`);
 
     // Optional: Email domain validation (disabled for now)
@@ -38,6 +38,7 @@ export async function POST(req: Request) {
       email,
       fullName: "",
       phoneNumber: "",
+      college: college || "",
       currentSemester: isAdmin ? 0 : 1,
       isAdmin: isAdmin || false,
       createdAt: new Date().toISOString()

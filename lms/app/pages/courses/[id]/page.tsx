@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -13,6 +12,7 @@ import {
 
 import Video1 from '@/components/Video1';
 import Quiz from '@/components/Quiz';
+
 import './styles.css';
 
 interface Question {
@@ -127,25 +127,27 @@ const DynamicCoursePage = () => {
     const renderOverview = () => (
         <div className="w-full space-y-8 px-8 pb-8">
             {/* Header Card */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">{subject.name}</h2>
-                    <p className="text-gray-500 text-sm">{subject.template || 'Comprehensive Course'}</p>
-                </div>
-                <div className="flex flex-col items-end gap-2 w-full md:w-auto">
-                    <div className="flex gap-1">
-                        {[...Array(20)].map((_, i) => {
-                            const segmentThreshold = (i + 1) * 5;
-                            const isCompleted = completedPercentage >= segmentThreshold;
-                            return (
-                                <div
-                                    key={i}
-                                    className={`h-2 w-1.5 rounded-full ${isCompleted ? 'bg-[#4CAF50]' : 'bg-gray-200'}`}
-                                ></div>
-                            );
-                        })}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">{subject.name}</h2>
+                        <p className="text-gray-500 text-sm">{subject.template || 'Comprehensive Course'}</p>
                     </div>
-                    <div className="text-xs font-medium text-gray-500">{completedPercentage}% Completed</div>
+                    <div className="flex flex-col items-end gap-2 w-full md:w-auto">
+                        <div className="flex gap-1">
+                            {[...Array(20)].map((_, i) => {
+                                const segmentThreshold = (i + 1) * 5;
+                                const isCompleted = completedPercentage >= segmentThreshold;
+                                return (
+                                    <div
+                                        key={i}
+                                        className={`h-2 w-1.5 rounded-full ${isCompleted ? 'bg-[#73C1D4]' : 'bg-gray-200'}`}
+                                    ></div>
+                                );
+                            })}
+                        </div>
+                        <div className="text-xs font-medium text-gray-500">{completedPercentage}% Completed</div>
+                    </div>
                 </div>
             </div>
 
@@ -180,7 +182,7 @@ const DynamicCoursePage = () => {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.id ? 'border-[#FF5B5B] text-[#FF5B5B]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+                        className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.id ? 'border-[#73C1D4] text-[#73C1D4]' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
                     >
                         {tab.icon}
                         {tab.label}
@@ -304,12 +306,12 @@ const DynamicCoursePage = () => {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
-                            className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden"
+                            className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg xl:hidden"
                         >
                             <Menu size={24} />
                         </button>
                         <div className="flex items-center gap-2">
-                            <Link href="/pages/courses" className="text-sm text-gray-500 hover:text-[#FF5B5B]">Courses</Link>
+                            <Link href="/pages/courses" className="text-sm text-gray-500 hover:text-[#73C1D4]">Courses</Link>
                             <ChevronRight className="w-4 h-4 text-gray-400" />
                             <h1 className="text-2xl font-bold text-gray-800 line-clamp-1">{subject.name}</h1>
                         </div>
@@ -340,7 +342,7 @@ const DynamicCoursePage = () => {
                                 {/* Video Section */}
                                 <div className="space-y-4">
                                     <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-[#FF5B5B]"></span>
+                                        <span className="w-2 h-2 rounded-full bg-[#73C1D4]"></span>
                                         Video Lesson
                                     </h3>
                                     <Video1
@@ -392,7 +394,7 @@ const DynamicCoursePage = () => {
                                             disabled={!isCurrentCompleted}
                                             className={`px-6 py-2.5 rounded-xl font-bold text-white transition-all shadow-md
                                                 ${isCurrentCompleted
-                                                    ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
+                                                    ? 'bg-[#73C1D4] hover:bg-[#73C1D4]/90 hover:shadow-lg'
                                                     : 'bg-gray-300 cursor-not-allowed shadow-none'
                                                 }`}
                                             title={!isCurrentCompleted ? "Complete the video , quiz , and get min 60% marks to proceed" : ""}

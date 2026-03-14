@@ -23,7 +23,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ activePage, isOpen, setIsOpe
             {/* Mobile Overlay */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden transition-opacity"
+                    className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 xl:hidden transition-opacity"
                     onClick={() => setIsOpen?.(false)}
                 />
             )}
@@ -31,8 +31,8 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ activePage, isOpen, setIsOpe
             <aside className={`
                 fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-100 flex flex-col p-6 
                 transition-transform duration-300 ease-in-out
-                md:relative md:translate-x-0 md:z-auto md:shrink-0
-                ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                xl:relative xl:translate-x-0 xl:z-auto xl:shrink-0
+                ${isOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'}
             `}>
                 <div className="flex items-center justify-between mb-10">
                     <div className="flex items-center gap-2 text-[#FF5B5B]">
@@ -44,7 +44,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ activePage, isOpen, setIsOpe
                     </div>
                     <button
                         onClick={() => setIsOpen?.(false)}
-                        className="p-2 -mr-2 text-gray-400 hover:text-gray-600 md:hidden"
+                        className="p-2 -mr-2 text-gray-400 hover:text-gray-600 xl:hidden"
                     >
                         <X size={20} />
                     </button>

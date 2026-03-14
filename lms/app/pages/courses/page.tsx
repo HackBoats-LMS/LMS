@@ -17,6 +17,7 @@ import {
   ChevronRight,
   CheckCircle2
 } from "lucide-react";
+import CourseBanner from "@/components/CourseBanner";
 
 interface Course {
   id: string | number;
@@ -25,6 +26,7 @@ interface Course {
   link: string;
   description: string;
   icon: React.ReactNode;
+  banner: string;
   color: string;
   textColor: string;
   progressColor: string;
@@ -125,11 +127,12 @@ const CoursesPage = () => {
               code: subject.template?.substring(0, 4).toUpperCase() || "SUBJ",
               link: `/pages/courses/${subject._id}`,
               description: (subject.description?.trim()) || (subject.modules[0]?.description?.trim()) || "No description available.",
-              icon: <BookOpen className="w-6 h-6 text-green-600" />,
-              color: "bg-green-50 border-green-100",
-              textColor: "text-green-600",
-              progressColor: "bg-green-500", // Dynamic visual
-              btnColor: "bg-green-50 text-green-600 hover:bg-green-100",
+              icon: <BookOpen className="w-6 h-6 text-[#73C1D4]" />,
+              banner: "/course-banner.svg",
+              color: "bg-[#73C1D4]/5 border-[#73C1D4]/10",
+              textColor: "text-[#73C1D4]",
+              progressColor: "bg-[#73C1D4]",
+              btnColor: "bg-[#73C1D4] text-black hover:bg-[#73C1D4]/20",
               credits: 3,
               modules: totalModules,
               progress: progress
@@ -156,13 +159,13 @@ const CoursesPage = () => {
       <DashboardSidebar activePage="courses" isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden p-4 md:p-8">
+      <main className="flex-1 flex flex-col h-full overflow-hidden p-4 xl:p-8">
         {/* Header */}
         <header className="flex-none flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden"
+              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg xl:hidden"
             >
               <Menu size={24} />
             </button>
@@ -174,12 +177,12 @@ const CoursesPage = () => {
 
 
           <div className="flex items-center gap-6">
-            <div className="relative hidden md:block">
+            <div className="relative hidden xl:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search courses..."
-                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5B5B]/20 w-64 shadow-sm"
+                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#73C1D4]/20 w-64 shadow-sm"
               />
             </div>
 
@@ -203,56 +206,52 @@ const CoursesPage = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {allCourses.map((course) => (
-                <div key={course.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col h-full min-h-[300px]">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className={`p-3 rounded-xl ${course.color}`}>
-                      {course.icon}
-                    </div>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${course.color} ${course.textColor}`}>
-                      {course.code}
-                    </span>
+                <div key={course.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm transition-all duration-300 group flex flex-col h-full overflow-hidden">
+                  {/* Banner Image */}
+                  <div className="aspect-[800/531] w-full overflow-hidden">
+                    <CourseBanner 
+                      title={course.name} 
+                      description={course.description} 
+                    />
                   </div>
 
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#FF5B5B] transition-colors">
-                    {course.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 leading-relaxed mb-6 line-clamp-2 flex-grow">
-                    {course.description}
-                  </p>
+                  <div className="p-6 flex flex-col flex-grow">
+                    
 
-                  <div className="mt-auto space-y-4">
-                    {/* Progress Bar */}
-                    <div>
-                      <div className="flex justify-between text-xs mb-1.5 font-medium">
-                        <span className="text-gray-500">Progress</span>
-                        <span className={course.textColor}>{course.progress}%</span>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 transition-colors">
+                      {course.name}
+                    </h3>
+
+                    <div className="mt-auto space-y-4">
+                      {/* Progress Bar */}
+                      <div>
+                        <div className="flex justify-between text-xs mb-1.5 font-medium">
+                          <span className="text-gray-500">Progress</span>
+                          <span className={course.textColor}>{course.progress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${course.progressColor} transition-all duration-500`}
+                            style={{ width: `${course.progress}%` }}
+                          ></div>
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${course.progressColor} transition-all duration-500`}
-                          style={{ width: `${course.progress}%` }}
-                        ></div>
+
+                      {/* Metadata */}
+                      <div className="flex items-center gap-4 text-xs text-gray-400 border-t border-gray-50 pt-3">
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>{course.modules} Modules</span>
+                        </div>
                       </div>
+
+                      <Link
+                        href={course.link}
+                        className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${course.btnColor}`}
+                      >
+                        Continue Learning <ChevronRight className="w-4 h-4" />
+                      </Link>
                     </div>
-
-                    {/* Metadata */}
-                    <div className="flex items-center gap-4 text-xs text-gray-400 border-t border-gray-50 pt-3">
-                      <div className="flex items-center gap-1.5">
-                        <Award className="w-3.5 h-3.5" />
-                        <span>{course.credits} Credits</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>{course.modules} Modules</span>
-                      </div>
-                    </div>
-
-                    <Link
-                      href={course.link}
-                      className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${course.btnColor}`}
-                    >
-                      Continue Learning <ChevronRight className="w-4 h-4" />
-                    </Link>
                   </div>
                 </div>
               ))}
