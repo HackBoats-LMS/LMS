@@ -157,6 +157,7 @@ export const CertificateTemplate: React.FC<CertificateTemplateProps> = ({
                             ID: {certificateId}
                         </div>
                         <div className="text-black font-mono text-[7px] tracking-widest uppercase">
+
                             <div className='flex justify-center align-center items-center'>
                                 verify at 
                             </div>{process.env.NEXT_PUBLIC_SITE_URL}certification/verify
