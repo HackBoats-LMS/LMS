@@ -28,7 +28,7 @@ export default withAuth(
     }
 
     // Profile completeness redirect for students
-    if (token && !isAdmin && token.isProfileComplete === false && path !== "/pages/profile" && !path.startsWith("/api")) {
+    if (token && !isAdmin && !token.isProfileComplete && path !== "/pages/profile" && !path.startsWith("/api")) {
       return NextResponse.redirect(new URL("/pages/profile", req.url));
     }
 

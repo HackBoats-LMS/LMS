@@ -79,7 +79,16 @@ const handler = NextAuth({
             return true;
         },
 
-        async jwt({ token, user, trigger }) {
+        async jwt({ token, user, trigger, session }) {
+            // Handle profile update trigger
+            if (trigger === "update" && session) {
+                if (session.isProfileComplete !== undefined) {
+                    token.isProfileComplete = session.isProfileComplete;
+                }
+                if (session.name) token.name = session.name;
+                return token;
+            }
+
             if (user) {
                 // Check both student and admin records
                 const { data: studentUser } = await supabase
@@ -145,10 +154,25 @@ const handler = NextAuth({
                 }
                 // Check if profile is complete (only for students)
                 if (studentUser) {
-                    const essentialFields = ['rollNo', 'phoneNumber', 'whatsapp', 'college', 'department', 'section'];
+                    const essentialFields = ['fullName', 'rollNo', 'phoneNumber', 'whatsapp', 'college', 'department', 'section'];
                     token.isProfileComplete = essentialFields.every(field => !!(studentUser as any)[field]);
                 } else {
                     token.isProfileComplete = true; // Admins or users without student record are "complete"
+                }
+            } else if (token.isAdmin === false && token.isProfileComplete === undefined) {
+                // For users who logged in before this check was added
+                const { data: studentUser } = await supabase
+                    .from('users')
+                    .select('fullName, rollNo, phoneNumber, whatsapp, college, department, section')
+                    .eq('email', token.email)
+                    .eq('isAdmin', false)
+                    .single();
+
+                if (studentUser) {
+                    const essentialFields = ['fullName', 'rollNo', 'phoneNumber', 'whatsapp', 'college', 'department', 'section'];
+                    token.isProfileComplete = essentialFields.every(field => !!(studentUser as any)[field]);
+                } else {
+                    token.isProfileComplete = true;
                 }
             }
             return token;

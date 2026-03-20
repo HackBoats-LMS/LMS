@@ -22,7 +22,7 @@ import {
 import { useRouter } from 'next/navigation';
 
 const ProfilePage = () => {
-    const { data: session } = useSession();
+    const { data: session, update } = useSession();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -98,10 +98,23 @@ const ProfilePage = () => {
             const result = await res.json();
             if (result.ok) {
                 setMessage({ type: 'success', text: 'Profile updated successfully!' });
-                // If they were redirected here, maybe they want to go back to dashboard
+                
+                // Update next-auth session
+                if (session) {
+                    // Update the session so middleware knows profile is complete
+                    await update({ 
+                        ...session,
+                        user: {
+                            ...session.user,
+                            name: formData.fullName
+                        },
+                        isProfileComplete: true 
+                    });
+                }
+
                 setTimeout(() => {
-                    // router.push('/');
-                }, 2000);
+                    router.push('/');
+                }, 1500);
             } else {
                 setMessage({ type: 'error', text: result.error || 'Failed to update profile' });
             }
@@ -139,6 +152,22 @@ const ProfilePage = () => {
                 </header>
 
                 <div className="max-w-4xl mx-auto">
+                    {/* Incomplete Profile Warning */}
+                    {session?.user && !session.user.isAdmin && !session.user.isProfileComplete && !message && (
+                        <div className="mb-6 p-6 bg-amber-50 border-2 border-amber-200 rounded-3xl flex items-start gap-4 shadow-sm">
+                            <div className="p-3 bg-white text-amber-500 rounded-2xl shadow-sm border border-amber-100 flex-shrink-0">
+                                <AlertCircle size={28} />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-amber-900 font-bold text-lg">Action Required: Complete Your Profile</h3>
+                                <p className="text-amber-800/80 text-sm leading-relaxed font-medium">
+                                    To access your courses, certificates, and other platform features, please fill in all the required details below. 
+                                    Our system requires these details for legal and administrative purposes.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Success/Error Message */}
                     {message && (
                         <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
