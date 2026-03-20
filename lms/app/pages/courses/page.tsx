@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import DashboardSidebar from '@/components/DashboardSidebar';
+import StudentHeader from '@/components/StudentHeader';
 import {
   Menu,
   Search,
@@ -18,6 +19,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import CourseBanner from "@/components/CourseBanner";
+import { useRouter } from "next/navigation";
 
 interface Course {
   id: string | number;
@@ -63,10 +65,10 @@ const saveToCache = (key: string, data: any) => {
 
 const CoursesPage = () => {
   const { data: session } = useSession();
+  const router = useRouter();
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
 
   useEffect(() => {
     const fetchCoursesAndProgress = async () => {
@@ -151,7 +153,9 @@ const CoursesPage = () => {
       }
     };
 
-    fetchCoursesAndProgress();
+    if (session?.user?.email) {
+      fetchCoursesAndProgress();
+    }
   }, [session]);
 
   return (
@@ -161,43 +165,12 @@ const CoursesPage = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden p-4 xl:p-8">
         {/* Header */}
-        <header className="flex-none flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg xl:hidden"
-            >
-              <Menu size={24} />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800 line-clamp-1">My Courses</h1>
-              <p className="text-sm text-gray-500 mt-1 hidden sm:block">Pick up where you left off</p>
-            </div>
-          </div>
-
-
-          <div className="flex items-center gap-6">
-            <div className="relative hidden xl:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search courses..."
-                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#73C1D4]/20 w-64 shadow-sm"
-              />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-700 hidden sm:block">{session?.user?.name || "Student"}</span>
-              <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
-                {session?.user?.image ? (
-                  <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <User className="text-gray-400" />
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <StudentHeader 
+          title="My Courses" 
+          subtitle="Pick up where you left off"
+          onMenuClick={() => setIsSidebarOpen(true)}
+          showSearch={true}
+        />
 
         {/* Courses Grid - Scrollable Container */}
         <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-20">

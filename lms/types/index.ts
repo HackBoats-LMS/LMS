@@ -36,6 +36,7 @@ declare module "next-auth" {
       isAdmin?: boolean;
       hasAdminRecord?: boolean;
       hasStudentRecord?: boolean;
+      isProfileComplete?: boolean;
     };
   }
 
@@ -52,6 +53,7 @@ declare module "next-auth/jwt" {
     isAdmin?: boolean;
     hasAdminRecord?: boolean;
     hasStudentRecord?: boolean;
+    isProfileComplete?: boolean;
   }
 }
 

@@ -3,10 +3,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
-import { LayoutDashboard, BookOpen, CreditCard, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, BookOpen, CreditCard, User, LogOut, X } from 'lucide-react';
 
 interface SidebarProps {
-    activePage: 'dashboard' | 'courses' | 'events';
+    activePage: 'dashboard' | 'courses' | 'events' | 'profile';
     isOpen?: boolean;
     setIsOpen?: (open: boolean) => void;
 }
@@ -16,6 +16,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ activePage, isOpen, setIsOpe
         { name: "Dashboard", icon: <LayoutDashboard size={20} />, id: 'dashboard', link: "/" },
         { name: "Courses", icon: <BookOpen size={20} />, id: 'courses', link: "/pages/courses" },
         { name: "Events", icon: <CreditCard size={20} />, id: 'events', link: "/pages/events" },
+        { name: "Profile", icon: <User size={20} />, id: 'profile', link: "/pages/profile" },
     ];
 
     return (

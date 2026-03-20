@@ -143,6 +143,13 @@ const handler = NextAuth({
                         }
                     }
                 }
+                // Check if profile is complete (only for students)
+                if (studentUser) {
+                    const essentialFields = ['rollNo', 'phoneNumber', 'whatsapp', 'college', 'department', 'section'];
+                    token.isProfileComplete = essentialFields.every(field => !!(studentUser as any)[field]);
+                } else {
+                    token.isProfileComplete = true; // Admins or users without student record are "complete"
+                }
             }
             return token;
         },
@@ -155,7 +162,8 @@ const handler = NextAuth({
                     id: token.id as string,
                     isAdmin: token.isAdmin as boolean,
                     hasAdminRecord: token.hasAdminRecord as boolean,
-                    hasStudentRecord: token.hasStudentRecord as boolean
+                    hasStudentRecord: token.hasStudentRecord as boolean,
+                    isProfileComplete: token.isProfileComplete as boolean
                 };
             }
             return session;
