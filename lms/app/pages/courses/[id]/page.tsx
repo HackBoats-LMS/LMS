@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import DashboardSidebar from '@/components/DashboardSidebar';
+import StudentHeader from '@/components/StudentHeader';
 import {
     LayoutDashboard, BookOpen, CreditCard, LogOut, User,
     ChevronRight, ChevronDown, CheckCircle2, FileText, Menu, Award
@@ -302,31 +303,16 @@ const DynamicCoursePage = () => {
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {/* Header */}
-                <header className="flex justify-between items-center mb-8 px-8 pt-8">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg xl:hidden"
-                        >
-                            <Menu size={24} />
-                        </button>
-                        <div className="flex items-center gap-2">
-                            <Link href="/pages/courses" className="text-sm text-gray-500 hover:text-[#73C1D4]">Courses</Link>
-                            <ChevronRight className="w-4 h-4 text-gray-400" />
-                            <h1 className="text-2xl font-bold text-gray-800 line-clamp-1">{subject.name}</h1>
-                        </div>
-                    </div>
-
-
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium text-gray-700 hidden sm:block">{session?.user?.name || "Student"}</span>
-                            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
-                                <User className="text-gray-400" />
-                            </div>
-                        </div>
-                    </div>
-                </header>
+        <StudentHeader 
+          title={
+            <div className="flex items-center gap-2">
+              <Link href="/pages/courses" className="text-sm font-normal text-gray-500 hover:text-[#73C1D4] transition-colors">Courses</Link>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <span className="line-clamp-1">{subject.name}</span>
+            </div>
+          }
+          onMenuClick={() => setIsSidebarOpen(true)}
+        />
 
                 {currentModule ? (
                     <div className="w-full space-y-8 px-8 pb-8">

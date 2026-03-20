@@ -4,15 +4,20 @@ import redis from "@/lib/redis";
 
 export async function PUT(req: Request) {
   try {
-    const { email, fullName, phoneNumber, college, currentSemester } = await req.json();
+    const { email, fullName, phoneNumber, rollNo, whatsapp, college, department, year, currentSemester, section } = await req.json();
 
     const { error } = await supabase
       .from('users')
       .update({
         fullName,
         phoneNumber,
+        rollNo,
+        whatsapp,
         college,
-        currentSemester
+        department,
+        year,
+        currentSemester,
+        section
       })
       .eq('email', email);
 

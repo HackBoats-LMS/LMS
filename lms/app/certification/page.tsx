@@ -4,7 +4,14 @@ import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { CertificateTemplate } from '@/components/CertificateTemplate';
+import { PDFCertificate } from '@/components/PDFCertificate';
 import { ChevronLeft, Download, Printer, Loader2, CheckCircle } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const PDFDownloadLink = dynamic(
+    () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
+    { ssr: false }
+);
 
 function CertificateContent() {
     const searchParams = useSearchParams();
@@ -20,17 +27,13 @@ function CertificateContent() {
     const userId = searchParams.get('userId');
     const courseId = searchParams.get('courseId');
 
-    // Aggressive check for library (every 100ms)
+    // Dynamically update document title for better PDF naming and browser experience
     useEffect(() => {
-        const checkInterval = setInterval(() => {
-            // @ts-ignore
-            if (window.html2pdf) {
-                setIsLibraryReady(true);
-                clearInterval(checkInterval);
-            }
-        }, 100);
-        return () => clearInterval(checkInterval);
-    }, []);
+        if (recipientName && courseName) {
+            document.title = `Certificate - ${recipientName} - ${courseName}`;
+        }
+    }, [recipientName, courseName]);
+
 
     // Security: Fetch the Official Record from the Database
     // This prevents users from editing the URL to change the name or course.
@@ -78,61 +81,19 @@ function CertificateContent() {
         verifyAndLoad();
     }, [userId, courseId, certId]);
 
-    const handleDownload = async () => {
-        const ghostElement = document.getElementById('certificate-ghost-capture');
-        // @ts-ignore
-        const html2pdf = window.html2pdf;
+    const [pdfKey, setPdfKey] = useState(Date.now());
+    const [isMounted, setIsMounted] = useState(false);
 
-        // SMART FALLBACK: If engine is slow, use the browser's native print-to-pdf
-        if (!html2pdf) {
-            console.warn("PDF Engine not ready, falling back to print");
-            window.print();
-            return;
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    // Update PDF key when data changes to ensure fresh generation
+    useEffect(() => {
+        if (isMounted) {
+            setPdfKey(Date.now());
         }
-
-        if (!ghostElement || status !== 'idle') return;
-
-        setStatus('loading');
-
-        try {
-            const opt = {
-                margin: [0, 0, 0, 0],
-                filename: `HB_CERT_${certId}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: {
-                    scale: 2, 
-                    useCORS: true,
-                    letterRendering: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    width: 1122,
-                    height: 794,
-                    windowWidth: 1122,
-                    windowHeight: 794,
-                    scrollX: 0,
-                    scrollY: 0,
-                    x: 0,
-                    y: 0
-                },
-                jsPDF: {
-                    unit: 'px',
-                    format: [1122, 795], // 1px buffer to prevent extra page on mobile
-                    orientation: 'landscape',
-                    hotfixes: ["px_scaling"]
-                },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-            };
-
-            await html2pdf().set(opt).from(ghostElement).save();
-            setStatus('success');
-            setTimeout(() => setStatus('idle'), 3000);
-        } catch (error) {
-            console.error(error);
-            setStatus('idle');
-            alert("Digital export failed. Trying Print mode...");
-            window.print();
-        }
-    };
+    }, [recipientName, courseName, certId, isMounted]);
 
     if (status === 'registering') return (
         <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center gap-6 font-sans">
@@ -146,22 +107,18 @@ function CertificateContent() {
 
     return (
         <div id="certificate-page-wrap" className="min-h-screen bg-[#F5F5F7] flex flex-col items-center overflow-x-hidden text-[#1D1D1F]">
-            {/* TRIPLE REDUNDANCY CDNs: If one fails, the next one is used */}
-            <Script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js" strategy="afterInteractive" />
-            <Script src="https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js" strategy="lazyOnload" />
-            <Script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" strategy="lazyOnload" />
 
             {/* CRITICAL: Aggressive Print Isolation & Color Enforcement */}
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
                     /* Reset everything */
-                    @page { size: landscape; margin: 0; }
+                    @page { size: 297mm 210mm; margin: 0; }
                     html, body { 
                         margin: 0 !important; 
                         padding: 0 !important; 
-                        height: 794px !important; 
-                        width: 1122px !important;
+                        height: 210mm !important; 
+                        width: 297mm !important;
                         -webkit-print-color-adjust: exact !important; 
                         print-color-adjust: exact !important;
                         background: white !important;
@@ -202,6 +159,7 @@ function CertificateContent() {
                         box-shadow: none !important;
                         background: white !important;
                         overflow: hidden !important;
+                        image-rendering: -webkit-optimize-contrast !important;
                         /* Prevent mobile text scaling */
                         -webkit-text-size-adjust: 100% !important;
                         text-size-adjust: 100% !important;
@@ -220,14 +178,45 @@ function CertificateContent() {
                 </button>
 
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={handleDownload}
-                        disabled={status === 'loading'}
-                        className="flex items-center gap-3 px-10 py-3.5 rounded-2xl bg-[#FF5B5B] text-white hover:bg-[#FF4040] transition-all font-bold text-sm shadow-xl shadow-[#FF5B5B]/20 disabled:opacity-50"
-                    >
-                        {status === 'loading' ? <Loader2 size={20} className="animate-spin" /> : status === 'success' ? <CheckCircle size={20} /> : <Download size={20} />}
-                        {status === 'loading' ? 'Exporting...' : status === 'success' ? 'Downloaded!' : 'Instant Download'}
-                    </button>
+                    {isMounted ? (
+                        <Suspense fallback={<div className="px-10 py-3.5 bg-gray-200 rounded-2xl animate-pulse w-48 text-transparent font-bold text-sm">Instant Download</div>}>
+                            <PDFDownloadLink
+                                key={pdfKey}
+                                document={<PDFCertificate recipientName={recipientName} courseName={courseName} date={new Date().toLocaleDateString()} certificateId={certId} />}
+                                fileName={`HB_CERT_${certId}.pdf`}
+                                style={{
+                                    textDecoration: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 12,
+                                    paddingLeft: 40,
+                                    paddingRight: 40,
+                                    paddingTop: 14,
+                                    paddingBottom: 14,
+                                    borderRadius: 16,
+                                    backgroundColor: '#FF5B5B',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    fontSize: 14,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 20px 25px -5px rgba(255, 91, 91, 0.2)',
+                                }}
+                            >
+                                {/* @ts-ignore */}
+                                {({ loading, error }) => (
+                                    <>
+                                        {loading ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
+                                        {loading ? 'Preparing...' : error ? 'Export Failed' : 'Instant Download'}
+                                    </>
+                                )}
+                            </PDFDownloadLink>
+                        </Suspense>
+                    ) : (
+                        <div className="px-10 py-3.5 bg-gray-100 rounded-2xl text-gray-400 font-bold text-sm border border-black/5 animate-pulse">
+                           Loading Engine...
+                        </div>
+                    )}
 
                     <button
                         onClick={() => window.print()}
@@ -247,7 +236,7 @@ function CertificateContent() {
                 {/* THE EXPORT SOURCE (Invisible in UI, the only thing that shows in Print) */}
                 <div 
                     id="print-portal-source" 
-                    className="fixed top-0 left-0 opacity-0 pointer-events-none print:opacity-100 z-[-1]"
+                    className="absolute top-0 left-[-9999px] opacity-100 pointer-events-none print:left-0 z-[-1]"
                     style={{ width: '1122px', height: '794px' }}
                 >
                     <div id="certificate-ghost-capture" style={{ width: '1122px', height: '794px', overflow: 'hidden', backgroundColor: 'white' }}>

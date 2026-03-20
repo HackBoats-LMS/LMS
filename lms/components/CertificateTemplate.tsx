@@ -50,11 +50,14 @@ const BotFace: React.FC = () => (
 
 const CertificationStamp: React.FC = () => (
     <div className="relative w-32 h-32 flex flex-col items-center justify-center">
-        <div className="absolute inset-0 border-[1.5px] border-black rounded-full" />
-        <div className={`${orbitron.className} text-center font-bold text-black flex flex-col items-center justify-center gap-0.5`}>
-            <span className="text-[11px] tracking-[0.2em] leading-none uppercase">Certified</span>
+        {/* Subtle holographic-like background */}
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-50 to-white/0" />
+        <div className="absolute inset-0 border-[2px] border-black/80 rounded-full shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]" />
+        <div className="absolute inset-1.5 border-[0.5px] border-black/10 rounded-full" />
+        <div className={`${orbitron.className} relative text-center font-bold text-black flex flex-col items-center justify-center gap-0.5`}>
+            <span className="text-[11px] tracking-[0.2em] leading-none uppercase opacity-80">Certified</span>
             <div className="w-14 h-[1px] bg-black/20 my-0.5" />
-            <span className="text-[11px] tracking-[0.2em] leading-none uppercase">Hackboats</span>
+            <span className="text-[11px] tracking-[0.2em] leading-none uppercase opacity-80">Hackboats</span>
         </div>
     </div>
 );
@@ -93,7 +96,7 @@ export const CertificateTemplate: React.FC<CertificateTemplateProps> = ({
                 <style dangerouslySetInnerHTML={{
                     __html: `
                     @media print {
-                        @page { size: landscape; margin: 0; }
+                        @page { size: 297mm 210mm; margin: 0; }
                         body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                         #certificate-print-area { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
                     }

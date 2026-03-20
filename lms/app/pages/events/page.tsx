@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import supabase from "@/lib/db"; // Keep for writes
 import DashboardSidebar from '@/components/DashboardSidebar';
+import StudentHeader from '@/components/StudentHeader';
 import {
     Menu,
     Plus,
@@ -30,6 +31,7 @@ import {
     Coffee,
     Upload
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const STORAGE_BUCKET = 'events';
 
@@ -55,6 +57,7 @@ const EVENT_TYPES = [
 
 const EventsPage = () => {
     const { data: session } = useSession();
+    const router = useRouter();
     const [events, setEvents] = useState<EventItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -80,8 +83,10 @@ const EventsPage = () => {
     const isAdmin = session?.user?.isAdmin === true;
 
     useEffect(() => {
-        fetchEvents();
-    }, []);
+        if (session?.user?.email) {
+            fetchEvents();
+        }
+    }, [session]);
 
     const fetchEvents = async () => {
         try {
@@ -229,48 +234,13 @@ const EventsPage = () => {
             {/* Main Content Area */}
             <main className="flex-1 overflow-y-auto p-4 xl:p-8">
                 {/* Header */}
-                <header className="flex justify-between items-center mb-8">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg xl:hidden"
-                        >
-                            <Menu size={24} />
-                        </button>
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-800">Events & Notices</h1>
-                            <p className="text-sm text-gray-500 mt-1 hidden sm:block">Stay updated with campus activities</p>
-                        </div>
-                    </div>
-
-
-                    <div className="flex items-center gap-6">
-                        <div className="relative hidden xl:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <input
-                                type="text"
-                                placeholder="Search events..."
-                                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5B5B]/20 w-64 shadow-sm"
-                            />
-                        </div>
-
-                        <button className="relative p-2 bg-white rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50">
-                            <Bell size={20} />
-                            <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-[#FF5B5B] rounded-full border-2 border-white"></span>
-                        </button>
-
-                        <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium text-gray-700 hidden sm:block">{session?.user?.name || "Student"}</span>
-                            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
-                                {session?.user?.image ? (
-                                    <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
-                                ) : (
-                                    <User className="text-gray-400" />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </header>
+                <StudentHeader 
+                    title="Events & Notices" 
+                    subtitle="Stay updated with campus activities"
+                    onMenuClick={() => setIsSidebarOpen(true)}
+                    showSearch={true}
+                    showNotifications={true}
+                />
 
                 {/* Filter and Action Bar */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">

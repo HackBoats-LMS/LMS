@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import supabase from '@/lib/db';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
+import StudentHeader from '@/components/StudentHeader';
 import {
   LayoutDashboard,
   BookOpen,
@@ -43,6 +45,7 @@ interface TimetableData {
 
 const StudentDashboard = () => {
   const { data: session } = useSession();
+  const router = useRouter();
   const [timetable, setTimetable] = useState<TimetableData | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [progressData, setProgressData] = useState<any[]>([]);
@@ -108,6 +111,7 @@ const StudentDashboard = () => {
       fetchDashboardData();
     }
   }, [session]);
+
 
   // --- Caching Utilities ---
   const CACHE_KEYS = { TIMETABLE: 'lms_timetable', EVENTS: 'lms_events', PROGRESS: 'lms_progress', SUBJECTS: 'lms_subjects' };
@@ -506,33 +510,10 @@ const StudentDashboard = () => {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-4 lg:p-8">
         {/* Header */}
-        <header className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg xl:hidden"
-            >
-              <Menu size={24} />
-            </button>
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-          </div>
-
-
-          <div className="flex items-center gap-6">
-
-
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-700 hidden sm:block">{session?.user?.name || "Student"}</span>
-              <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
-                {session?.user?.image ? (
-                  <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <User className="text-gray-400" />
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <StudentHeader 
+          title="Dashboard" 
+          onMenuClick={() => setIsSidebarOpen(true)} 
+        />
 
         {/* Leaderboard and States Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
