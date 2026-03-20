@@ -2,21 +2,24 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
-import { LayoutDashboard, BookOpen, CreditCard, User, LogOut, X } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import { LayoutDashboard, BookOpen, CreditCard, User, LogOut, X, Lock } from 'lucide-react';
 
 interface SidebarProps {
-    activePage: 'dashboard' | 'courses' | 'events' | 'profile';
+    activePage: 'dashboard' | 'courses' | 'events' | 'profile' | 'adminDashboard' | 'manageUsers' | 'adminProgress';
     isOpen?: boolean;
     setIsOpen?: (open: boolean) => void;
 }
 
 const DashboardSidebar: React.FC<SidebarProps> = ({ activePage, isOpen, setIsOpen }) => {
+    const { data: session } = useSession();
+    const isProfileIncomplete = session?.user && !session.user.isAdmin && !session.user.isProfileComplete;
+
     const menuItems = [
-        { name: "Dashboard", icon: <LayoutDashboard size={20} />, id: 'dashboard', link: "/" },
-        { name: "Courses", icon: <BookOpen size={20} />, id: 'courses', link: "/pages/courses" },
-        { name: "Events", icon: <CreditCard size={20} />, id: 'events', link: "/pages/events" },
-        { name: "Profile", icon: <User size={20} />, id: 'profile', link: "/pages/profile" },
+        { name: "Dashboard", icon: <LayoutDashboard size={20} />, id: 'dashboard', link: "/", locked: isProfileIncomplete },
+        { name: "Courses", icon: <BookOpen size={20} />, id: 'courses', link: "/pages/courses", locked: isProfileIncomplete },
+        { name: "Events", icon: <CreditCard size={20} />, id: 'events', link: "/pages/events", locked: isProfileIncomplete },
+        { name: "Profile", icon: <User size={20} />, id: 'profile', link: "/pages/profile", locked: false },
     ];
 
     return (
@@ -57,13 +60,21 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ activePage, isOpen, setIsOpe
                         return (
                             <Link
                                 key={item.id}
-                                href={item.link}
+                                href={item.locked ? "/pages/profile" : item.link}
                                 onClick={() => setIsOpen?.(false)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${isActive ? 'bg-[#FFF0F0] text-[#FF5B5B]' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                                    }`}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors relative ${
+                                    isActive 
+                                    ? 'bg-[#FFF0F0] text-[#FF5B5B]' 
+                                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-normal'
+                                }`}
                             >
                                 <span className={isActive ? "text-[#FF5B5B]" : "text-gray-400"}>{item.icon}</span>
-                                {item.name}
+                                <span className="flex-1">{item.name}</span>
+                                {item.locked && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300">
+                                        <Lock size={14} />
+                                    </div>
+                                )}
                             </Link>
                         );
                     })}
