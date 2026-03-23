@@ -1,5 +1,6 @@
 import supabase from "@/lib/db";
 import { NextResponse } from "next/server";
+import { hash } from "bcryptjs";
 
 export async function POST() {
   try {
@@ -13,11 +14,12 @@ export async function POST() {
       return NextResponse.json({ ok: false, message: "Admin already exists" });
     }
 
+    const hashedPassword = await hash("admin123", 10);
     const { error } = await supabase
       .from('users')
       .insert({
         email: "admin@ggu.edu.in",
-        password: "admin123",
+        password: hashedPassword,
         fullName: "Admin",
         phoneNumber: "",
         currentSemester: 0,

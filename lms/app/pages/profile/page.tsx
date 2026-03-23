@@ -100,21 +100,13 @@ const ProfilePage = () => {
                 setMessage({ type: 'success', text: 'Profile updated successfully!' });
                 
                 // Update next-auth session
-                if (session) {
-                    // Update the session so middleware knows profile is complete
-                    await update({ 
-                        ...session,
-                        user: {
-                            ...session.user,
-                            name: formData.fullName
-                        },
-                        isProfileComplete: true 
-                    });
+                if (update) {
+                    await update(); // Trigger a JWT refresh
                 }
 
                 setTimeout(() => {
-                    router.push('/');
-                }, 1500);
+                    window.location.href = '/';
+                }, 1000);
             } else {
                 setMessage({ type: 'error', text: result.error || 'Failed to update profile' });
             }
@@ -137,7 +129,7 @@ const ProfilePage = () => {
         <div className="flex h-screen bg-[#F5F5F7] font-sans text-gray-900 overflow-hidden">
             <DashboardSidebar activePage="profile" isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-            <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+            <main className="flex-1 overflow-y-auto p-6 lg:p-10">
                 {/* Header */}
                 <header className="flex justify-between items-center mb-8">
                     <div className="flex items-center gap-4">

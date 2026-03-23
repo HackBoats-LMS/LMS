@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-    Plus, Trash2, Save, ArrowLeft, BookOpen, Film, MapPin, AlignLeft,
-    Edit2, MoreVertical, X, CheckCircle2, HelpCircle
+    Plus, Trash2, ArrowLeft, BookOpen, Film, MapPin, AlignLeft,
+    Edit2, CheckCircle2, HelpCircle, Palette, Hash
 } from 'lucide-react';
+import CourseBanner from '@/components/CourseBanner';
 
 // --- Types ---
 
@@ -32,6 +33,8 @@ interface SubjectData {
     name: string;
     description?: string;
     template: string;
+    bannerColor?: string;
+    hashtags?: string[];
     modules: ModuleData[];
 }
 
@@ -81,7 +84,6 @@ const QuizEditor = ({
     };
 
     const handleSave = () => {
-        // Basic validation
         if (!title.trim()) {
             alert("Quiz title is required");
             return;
@@ -108,7 +110,7 @@ const QuizEditor = ({
                         <p className="text-sm text-gray-500">Module: {moduleName}</p>
                     </div>
                     <button onClick={onCancel} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-gray-500" />
+                        <Plus className="w-5 h-5 text-gray-500 rotate-45" />
                     </button>
                 </div>
 
@@ -133,14 +135,11 @@ const QuizEditor = ({
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
-
                                 <span className="absolute -top-3 left-4 bg-white px-2 py-0.5 text-xs font-bold text-gray-500 border border-gray-200 rounded-full">
                                     Q{qIndex + 1}
                                 </span>
-
                                 <div className="space-y-4 pt-2">
                                     <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Question Text</label>
                                         <textarea
                                             value={q.question}
                                             onChange={(e) => updateQuestion(qIndex, 'question', e.target.value)}
@@ -149,11 +148,7 @@ const QuizEditor = ({
                                             placeholder="Enter your question here..."
                                         />
                                     </div>
-
                                     <div className="space-y-3">
-                                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                            Options <span className="font-normal text-gray-400">(Select the radio button for the correct answer)</span>
-                                        </label>
                                         {q.options.map((opt, oIndex) => (
                                             <div key={oIndex} className="flex items-center gap-3">
                                                 <input
@@ -176,7 +171,6 @@ const QuizEditor = ({
                                 </div>
                             </div>
                         ))}
-
                         <button
                             onClick={addQuestion}
                             className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-gray-500 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all flex items-center justify-center gap-2 font-medium"
@@ -188,16 +182,10 @@ const QuizEditor = ({
                 </div>
 
                 <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                    <button
-                        onClick={onCancel}
-                        className="px-5 py-2.5 rounded-xl font-medium text-gray-600 hover:bg-gray-200 transition-colors"
-                    >
+                    <button onClick={onCancel} className="px-5 py-2.5 rounded-xl font-medium text-gray-600 hover:bg-gray-200 transition-colors">
                         Cancel
                     </button>
-                    <button
-                        onClick={handleSave}
-                        className="px-5 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
-                    >
+                    <button onClick={handleSave} className="px-5 py-2.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg transition-all">
                         Save Quiz
                     </button>
                 </div>
@@ -216,6 +204,9 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
     const [name, setName] = useState('');
     const [subjectDescription, setSubjectDescription] = useState('');
     const [template, setTemplate] = useState('');
+    const [bannerColor, setBannerColor] = useState('blue');
+    const [hashtagInput, setHashtagInput] = useState('');
+    const [hashtags, setHashtags] = useState<string[]>([]);
     const [modules, setModules] = useState<ModuleData[]>([]);
 
     // Quiz Editor State
@@ -246,6 +237,9 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
         setName('');
         setSubjectDescription('');
         setTemplate('');
+        setBannerColor('blue');
+        setHashtags([]);
+        setHashtagInput('');
         setModules([{ name: '', videoId: '', place: '1', description: '', quiz: null }]);
         setView('form');
     };
@@ -255,26 +249,27 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
         setName(subject.name);
         setSubjectDescription(subject.description || '');
         setTemplate(subject.template || '');
+        setBannerColor(subject.bannerColor || 'blue');
+        setHashtags(subject.hashtags || []);
+        setHashtagInput('');
         setModules(subject.modules || []);
         setView('form');
     };
 
     const handleDeleteSubject = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this subject? This action cannot be undone.")) return;
+        if (!confirm("Are you sure you want to delete this subject?")) return;
         setLoading(true);
         try {
             const res = await fetch(`/api/subjects?id=${id}`, { method: 'DELETE' });
             const result = await res.json();
             if (result.success) {
-                alert("Subject deleted successfully");
+                if (typeof window !== 'undefined') localStorage.removeItem('lms_subjects');
+                alert("Deleted successfully");
                 setView('list');
                 fetchSubjects();
-            } else {
-                alert(result.error || "Failed to delete subject");
             }
         } catch (error) {
-            console.error("Error deleting subject", error);
-            alert("Error deleting subject");
+            console.error("Error", error);
         } finally {
             setLoading(false);
         }
@@ -282,31 +277,14 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
 
     const handleSaveSubject = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Validation: Check if every module has a quiz
-        const modulesWithoutQuiz = modules.filter(m => !m.quiz || m.quiz.questions.length === 0);
-        if (modulesWithoutQuiz.length > 0) {
-            const moduleNames = modulesWithoutQuiz.map(m => m.name || 'Untitled Module').join(', ');
-            alert(`The following modules do not have a quiz: ${moduleNames}. \nEvery module must have a quiz before saving.`);
-            return;
-        }
-
-        // Validation: Unique Place/Order
-        const places = modules.map(m => m.place.trim());
-        const uniquePlaces = new Set(places);
-        if (uniquePlaces.size !== places.length) {
-            alert("Duplicate 'Place / Order' values found. Please ensure each module has a unique order number.");
-            return;
-        }
-
         setLoading(true);
-
-        const normalizedDescription = subjectDescription?.trim() || '';
 
         const payload = {
             name,
-            description: normalizedDescription,
+            description: subjectDescription.trim(),
             template,
+            bannerColor,
+            hashtags,
             modules,
             ...(editingId && { _id: editingId })
         };
@@ -321,33 +299,34 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
 
             const result = await res.json();
             if (result.success) {
-                alert(`Subject ${editingId ? 'updated' : 'created'} successfully!`);
+                if (typeof window !== 'undefined') localStorage.removeItem('lms_subjects');
+                alert("Saved successfully!");
                 setView('list');
                 fetchSubjects();
             } else {
                 alert(result.error || "Operation failed");
             }
         } catch (error) {
-            console.error("Error saving subject", error);
-            alert("Failed to save subject");
+            alert("Error saving subject");
         } finally {
             setLoading(false);
         }
     };
 
-    // Module Management
-    const addModule = () => {
-        let nextPlace = 1;
-        // Find the highest existing place number
-        const existingNumbers = modules
-            .map(m => parseInt(m.place, 10))
-            .filter(n => !isNaN(n));
-
-        if (existingNumbers.length > 0) {
-            nextPlace = Math.max(...existingNumbers) + 1;
+    const addHashtag = () => {
+        if (hashtagInput.trim() && hashtags.length < 2) {
+            setHashtags([...hashtags, hashtagInput.trim().replace(/^#/, '')]);
+            setHashtagInput('');
         }
+    };
 
-        setModules([...modules, { name: '', videoId: '', place: nextPlace.toString(), description: '', quiz: null }]);
+    const removeHashtag = (idx: number) => {
+        setHashtags(hashtags.filter((_, i) => i !== idx));
+    };
+
+    const addModule = () => {
+        const nextPlace = modules.length > 0 ? (Math.max(...modules.map(m => parseInt(m.place, 10)).filter(n => !isNaN(n))) + 1).toString() : '1';
+        setModules([...modules, { name: '', videoId: '', place: nextPlace, description: '', quiz: null }]);
     };
 
     const removeModule = (index: number) => {
@@ -358,15 +337,10 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
 
     const updateModule = (index: number, field: keyof ModuleData, value: any) => {
         const newModules = [...modules];
-
-        // If changing place, we allow typing anything, but validation will catch duplicates on save.
-        // Or we could strictly enforce input, but that's bad UX while deleting/retyping.
-
         newModules[index] = { ...newModules[index], [field]: value };
         setModules(newModules);
     };
 
-    // Quiz Management
     const openQuizEditor = (index: number) => {
         setCurrentModuleIndex(index);
         setQuizModalOpen(true);
@@ -385,54 +359,31 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[500px]">
                 <div className="flex justify-between items-center mb-8">
                     <div className="flex items-center gap-4">
-                        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
                             <ArrowLeft className="w-5 h-5 text-gray-500" />
                         </button>
-                        <div>
-                            <h2 className="text-xl font-bold text-gray-800">Manage Subjects</h2>
-                            <p className="text-sm text-gray-500">View and edit courses and modules</p>
-                        </div>
+                        <h2 className="text-xl font-bold text-gray-800">Manage Subjects</h2>
                     </div>
-                    <button
-                        onClick={handleAddNew}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition order-2 shadow-lg shadow-blue-500/20"
-                    >
-                        <Plus className="w-4 h-4" />
-                        New Subject
+                    <button onClick={handleAddNew} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold">
+                        <Plus className="w-4 h-4" /> New Subject
                     </button>
                 </div>
-
-                {loading ? (
-                    <div className="flex justify-center py-20 text-gray-400">Loading subjects...</div>
-                ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                        {subjects.map((subject) => (
-                            <div key={subject._id} className="p-5 border border-gray-100 rounded-xl bg-gray-50 hover:bg-white hover:shadow-md transition-all flex justify-between items-center group">
-                                <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    <div className="w-12 h-12 flex-shrink-0 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                {loading ? <div className="text-center py-20 text-gray-400">Loading...</div> : (
+                    <div className="grid gap-4">
+                        {subjects.map((s) => (
+                            <div key={s._id} className="p-5 border border-gray-100 rounded-xl bg-gray-50 flex justify-between items-center group">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
                                         <BookOpen className="w-6 h-6" />
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-gray-800 truncate">{subject.name}</h3>
-                                        <p className="text-sm text-gray-500">{subject.modules.length} Modules • {subject.template || 'No Template'}</p>
-                                        {subject.description?.trim() && (
-                                            <p className="text-xs text-gray-400 mt-1 line-clamp-1 italic">{subject.description.trim()}</p>
-                                        )}
+                                    <div>
+                                        <h3 className="font-bold text-gray-800">{s.name}</h3>
+                                        <p className="text-sm text-gray-500">{s.modules.length} Modules • {s.template}</p>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => handleEdit(subject)}
-                                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:text-blue-600 hover:border-blue-200 transition-colors shadow-sm"
-                                >
-                                    Edit Subject
-                                </button>
+                                <button onClick={() => handleEdit(s)} className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm hover:text-blue-600 transition-colors">Edit</button>
                             </div>
                         ))}
-                        {subjects.length === 0 && (
-                            <div className="text-center py-20 text-gray-400 rounded-xl border-2 border-dashed border-gray-100">
-                                No subjects found. Create your first one!
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
@@ -441,205 +392,87 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
 
     return (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[500px]">
-            {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => setView('list')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <ArrowLeft className="w-5 h-5 text-gray-500" />
-                    </button>
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-800">{editingId ? 'Edit Subject' : 'New Subject'}</h2>
-                        <p className="text-sm text-gray-500">{editingId ? 'Update content, modules and quizzes' : 'Create a new course structure'}</p>
-                    </div>
+                    <button onClick={() => setView('list')} className="p-2 hover:bg-gray-100 rounded-full"><ArrowLeft className="w-5 h-5 text-gray-500" /></button>
+                    <h2 className="text-xl font-bold text-gray-800">{editingId ? 'Edit Subject' : 'New Subject'}</h2>
                 </div>
             </div>
 
             <form onSubmit={handleSaveSubject} className="space-y-8 max-w-5xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                <div className="grid md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-2xl border border-gray-100">
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">Subject Name</label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g. Advanced React Patterns"
-                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                            required
-                        />
+                        <label className="text-sm font-bold text-gray-700">Name</label>
+                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border" required />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">Template / Category</label>
-                        <input
-                            type="text"
-                            value={template}
-                            onChange={(e) => setTemplate(e.target.value)}
-                            placeholder="e.g. FSWD"
-                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                        />
+                        <label className="text-sm font-bold text-gray-700">Template</label>
+                        <input type="text" value={template} onChange={(e) => setTemplate(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border" />
                     </div>
-                    <div className="space-y-2 md:col-span-2">
-                        <label className="text-sm font-bold text-gray-700">Subject Description (About Course)</label>
-                        <textarea
-                            value={subjectDescription}
-                            onChange={(e) => setSubjectDescription(e.target.value)}
-                            placeholder="Write a brief overview of the whole subject..."
-                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white resize-none"
-                            rows={3}
-                        />
+                    <div className="md:col-span-2 space-y-2">
+                        <label className="text-sm font-bold text-gray-700">Description</label>
+                        <textarea value={subjectDescription} onChange={(e) => setSubjectDescription(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border" rows={2} />
                     </div>
                 </div>
 
-                <div className="border-t border-gray-100 pt-8">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                            <BookOpen className="w-5 h-5 text-gray-400" />
-                            Modules
-                        </h3>
-                        <button
-                            type="button"
-                            onClick={addModule}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Module
-                        </button>
-                    </div>
-
-                    <div className="space-y-6">
-                        {modules.map((module, index) => (
-                            <div key={index} className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm relative group hover:shadow-md transition-shadow">
-                                <div className="absolute top-4 right-4 flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => removeModule(index)}
-                                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                        title="Remove Module"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                <div className="grid lg:grid-cols-12 gap-8 items-start">
+                    <div className="lg:col-span-5 space-y-6">
+                        <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-6">
+                            <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 uppercase"><Palette className="w-4 h-4" /> Colors</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {['blue', 'indigo', 'emerald', 'amber', 'rose'].map((c) => (
+                                    <button key={c} type="button" onClick={() => setBannerColor(c)} className={`w-10 h-10 rounded-full border-2 ${bannerColor === c ? 'border-blue-600 ring-2 ring-blue-100' : 'border-transparent'} ${c === 'blue' ? 'bg-[#A5D8E5]' : ''} ${c === 'indigo' ? 'bg-[#C3C8F3]' : ''} ${c === 'emerald' ? 'bg-[#B2EBC9]' : ''} ${c === 'amber' ? 'bg-[#FEE2B3]' : ''} ${c === 'rose' ? 'bg-[#FBC8D1]' : ''}`} />
+                                ))}
+                            </div>
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 uppercase"><Hash className="w-4 h-4" /> Hashtags (Max 2)</h3>
+                                <div className="flex gap-2">
+                                    <input type="text" value={hashtagInput} onChange={(e) => setHashtagInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addHashtag())} placeholder="Add tag..." disabled={hashtags.length >= 2} className="flex-1 px-3 py-1.5 rounded-lg border text-sm disabled:opacity-50" />
+                                    <button type="button" onClick={addHashtag} disabled={hashtags.length >= 2} className="p-2 bg-blue-600 text-white rounded-lg disabled:bg-gray-300"><Plus className="w-4 h-4" /></button>
                                 </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                                    {/* Left: Input Fields */}
-                                    <div className="md:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="md:col-span-2">
-                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">Module Name</label>
-                                            <input
-                                                type="text"
-                                                value={module.name}
-                                                onChange={(e) => updateModule(index, 'name', e.target.value)}
-                                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-blue-500"
-                                                placeholder="e.g. Introduction to Hooks"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block flex items-center gap-1"><Film className="w-3 h-3" /> Video ID</label>
-                                            <input
-                                                type="text"
-                                                value={module.videoId}
-                                                onChange={(e) => updateModule(index, 'videoId', e.target.value)}
-                                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-blue-500"
-                                                placeholder="YouTube ID"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block flex items-center gap-1"><MapPin className="w-3 h-3" /> Place / Order</label>
-                                            <input
-                                                type="text"
-                                                value={module.place}
-                                                onChange={(e) => updateModule(index, 'place', e.target.value)}
-                                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-blue-500"
-                                                placeholder="1.1"
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block flex items-center gap-1"><AlignLeft className="w-3 h-3" /> Description</label>
-                                            <textarea
-                                                value={module.description}
-                                                onChange={(e) => updateModule(index, 'description', e.target.value)}
-                                                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-blue-500 resize-none"
-                                                rows={2}
-                                                placeholder="Brief description of the content..."
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Right: Quiz & Actions */}
-                                    <div className="md:col-span-4 flex flex-col justify-center items-center border-l border-gray-100 pl-6">
-                                        <div className="text-center w-full">
-                                            <div className="mb-3">
-                                                {module.quiz ? (
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold mb-2 flex items-center gap-1">
-                                                            <CheckCircle2 className="w-3 h-3" /> Quiz Added
-                                                        </span>
-                                                        <p className="text-xs text-gray-500">{module.quiz.questions.length} Questions</p>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col items-center text-gray-400 mb-2">
-                                                        <HelpCircle className="w-8 h-8 mb-1 opacity-20" />
-                                                        <span className="text-xs font-medium">No Quiz</span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => openQuizEditor(index)}
-                                                className={`w-full py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${module.quiz ? 'bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
-                                            >
-                                                {module.quiz ? <><Edit2 className="w-3.5 h-3.5" /> Edit Quiz</> : <><Plus className="w-3.5 h-3.5" /> Add Quiz</>}
-                                            </button>
-                                        </div>
-                                    </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {hashtags.map((h, i) => (
+                                        <span key={i} className="flex items-center gap-1 px-2 py-1 bg-white border rounded-full text-xs font-medium">#{h} <button type="button" onClick={() => removeHashtag(i)}><Plus className="w-3 h-3 rotate-45" /></button></span>
+                                    ))}
                                 </div>
                             </div>
-                        ))}
+                        </div>
+                    </div>
+                    <div className="lg:col-span-7 space-y-3">
+                        <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-xl">
+                            <CourseBanner title={name || "Subject Title"} description={subjectDescription || "Description..."} bannerColor={bannerColor} hashtags={hashtags} />
+                        </div>
                     </div>
                 </div>
 
-                <div className="sticky bottom-0 bg-white border-t border-gray-100 pt-6 pb-2 mt-8 flex justify-end gap-3 z-10">
-                    <div className="flex gap-3">
-                        {editingId && (
-                            <button
-                                type="button"
-                                onClick={() => handleDeleteSubject(editingId)}
-                                disabled={loading}
-                                className="px-6 py-3 rounded-xl font-medium text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all flex items-center gap-2"
-                            >
-                                <Trash2 className="w-5 h-5" />
-                                Delete Subject
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            onClick={() => setView('list')}
-                            className="px-6 py-3 rounded-xl font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className={`
-                                flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-white shadow-lg shadow-blue-500/30 transition-all
-                                ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:translate-y-[-1px]'}
-                            `}
-                        >
-                            {loading ? 'Saving...' : 'Save Subject'}
-                        </button>
-                    </div>
+                <div className="border-t pt-8 space-y-6">
+                    <div className="flex justify-between items-center"><h3 className="text-lg font-bold">Modules</h3><button type="button" onClick={addModule} className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm">+ Add Module</button></div>
+                    {modules.map((m, i) => (
+                        <div key={i} className="p-6 bg-white rounded-xl border relative shadow-sm hover:shadow-md transition-shadow">
+                            <button type="button" onClick={() => removeModule(i)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                            <div className="grid md:grid-cols-12 gap-6">
+                                <div className="md:col-span-8 space-y-4">
+                                    <input type="text" value={m.name} onChange={(e) => updateModule(i, 'name', e.target.value)} placeholder="Module Name" className="w-full px-3 py-2 border rounded-lg text-sm" />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input type="text" value={m.videoId} onChange={(e) => updateModule(i, 'videoId', e.target.value)} placeholder="Video ID" className="px-3 py-2 border rounded-lg text-sm" />
+                                        <input type="text" value={m.place} onChange={(e) => updateModule(i, 'place', e.target.value)} placeholder="Order" className="px-3 py-2 border rounded-lg text-sm" />
+                                    </div>
+                                </div>
+                                <div className="md:col-span-4 flex flex-col justify-center items-center border-l pl-6">
+                                    <span className={`text-xs font-bold mb-2 ${m.quiz ? 'text-green-600' : 'text-gray-400'}`}>{m.quiz ? '✓ Quiz Added' : 'No Quiz'}</span>
+                                    <button type="button" onClick={() => openQuizEditor(i)} className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium">{m.quiz ? 'Edit Quiz' : 'Add Quiz'}</button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="sticky bottom-0 bg-white border-t pt-6 pb-2 mt-8 flex justify-end gap-3 z-10">
+                    {editingId && <button type="button" onClick={() => handleDeleteSubject(editingId)} className="px-6 py-3 bg-red-500 text-white rounded-xl font-medium">Delete</button>}
+                    <button type="button" onClick={() => setView('list')} className="px-6 py-3 text-gray-600 hover:bg-gray-100 rounded-xl">Cancel</button>
+                    <button type="submit" disabled={loading} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold">{loading ? 'Saving...' : 'Save Subject'}</button>
                 </div>
             </form>
-
-            {quizModalOpen && currentModuleIndex !== null && (
-                <QuizEditor
-                    moduleName={modules[currentModuleIndex].name || `Module ${currentModuleIndex + 1}`}
-                    initialQuiz={modules[currentModuleIndex].quiz}
-                    onSave={saveQuiz}
-                    onCancel={() => setQuizModalOpen(false)}
-                />
-            )}
         </div>
     );
 }

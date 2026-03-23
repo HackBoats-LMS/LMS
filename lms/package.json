@@ -12,7 +12,11 @@
     "@heroicons/react": "^2.2.0",
     "@react-pdf/renderer": "^4.3.2",
     "@supabase/supabase-js": "^2.95.3",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
+    "html-to-image": "^1.11.13",
     "ioredis": "^5.9.3",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.563.0",
     "mongodb": "^6.3.0",
     "mongoose": "^9.2.1",
@@ -21,7 +25,8 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "tailwind-scrollbar-hide": "^4.0.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

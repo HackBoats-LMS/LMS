@@ -44,6 +44,9 @@ export default function ManageUsers({ onBack }: { onBack: () => void }) {
             alert("User added!");
             setNewUserEmail("");
             fetchUsers();
+        } else {
+            const data = await res.json();
+            alert(data.error || "Failed to add user");
         }
     };
 

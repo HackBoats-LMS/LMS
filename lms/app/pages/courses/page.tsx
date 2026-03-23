@@ -1,25 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import DashboardSidebar from '@/components/DashboardSidebar';
 import StudentHeader from '@/components/StudentHeader';
 import {
-  Menu,
-  Search,
-  Bell,
-  User,
-  LogOut,
   BookOpen,
-  Award,
-  LayoutDashboard,
-  CreditCard,
   ChevronRight,
   CheckCircle2
 } from "lucide-react";
 import CourseBanner from "@/components/CourseBanner";
-import { useRouter } from "next/navigation";
 
 interface Course {
   id: string | number;
@@ -36,36 +27,12 @@ interface Course {
   credits: number;
   modules: number;
   progress: number;
+  bannerColor?: string;
+  hashtags?: string[];
 }
-
-// --- Caching Utilities ---
-const CACHE_KEYS = { SUBJECTS: 'lms_subjects', PROGRESS: 'lms_progress' };
-const CACHE_DURATIONS = { SUBJECTS: 5 * 60 * 1000, PROGRESS: 30 * 1000 };
-
-const getFromCache = (key: string) => {
-  if (typeof window === 'undefined') return null;
-  const cached = localStorage.getItem(key);
-  if (!cached) return null;
-  try {
-    const { data, timestamp } = JSON.parse(cached);
-    if (Date.now() - timestamp < (CACHE_DURATIONS[key as keyof typeof CACHE_DURATIONS] || 0)) {
-      return data;
-    }
-    localStorage.removeItem(key);
-  } catch (e) {
-    localStorage.removeItem(key);
-  }
-  return null;
-};
-
-const saveToCache = (key: string, data: any) => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
-};
 
 const CoursesPage = () => {
   const { data: session } = useSession();
-  const router = useRouter();
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -77,50 +44,20 @@ const CoursesPage = () => {
       try {
         setLoading(true);
 
-        // 1. Parallel Fetch with Caching functionality
-        let subjectsData = getFromCache(CACHE_KEYS.SUBJECTS);
-        let progressData = getFromCache(CACHE_KEYS.PROGRESS);
+        // Fetch freshly from server to avoid caching issues as requested
+        const [sRes, pRes] = await Promise.all([
+          fetch('/api/subjects').then(res => res.json()),
+          fetch(`/api/progress?userEmail=${session.user.email}`).then(res => res.json())
+        ]);
 
-        let subjectsResData: any = null;
-        let progressResData: any = null;
+        const userProgress = pRes?.success ? pRes.data : [];
 
-        if (!subjectsData || !progressData) {
-          const endpoints = [];
-          if (!subjectsData) endpoints.push(fetch('/api/subjects').then(res => res.json()));
-          else endpoints.push(Promise.resolve({ success: true, data: subjectsData }));
-
-          if (!progressData) endpoints.push(fetch(`/api/progress?userEmail=${session.user.email}`).then(res => res.json()));
-          else endpoints.push(Promise.resolve({ success: true, data: progressData }));
-
-          const [sData, pData] = await Promise.all(endpoints);
-
-          if (!subjectsData && sData.success) {
-            subjectsData = sData.data;
-            saveToCache(CACHE_KEYS.SUBJECTS, subjectsData);
-          }
-          if (!progressData && pData.success) {
-            progressData = pData.data;
-            saveToCache(CACHE_KEYS.PROGRESS, progressData);
-          }
-
-          subjectsResData = sData;
-          progressResData = pData;
-        } else {
-          subjectsResData = { success: true, data: subjectsData };
-          progressResData = { success: true, data: progressData };
-        }
-
-        const userProgress = progressResData?.success ? progressResData.data : (progressData || []);
-
-        if (subjectsResData?.success && Array.isArray(subjectsResData.data)) {
-          const dbCourses: Course[] = subjectsResData.data.map((subject: any) => {
-            // Calculate Progress
+        if (sRes?.success && Array.isArray(sRes.data)) {
+          const dbCourses = sRes.data.map((subject: any) => {
             const totalModules = subject.modules.length;
             const completedCount = userProgress.filter((p: any) =>
               p.subject === subject.name && (p.completed || p.percentage >= 60)
             ).length;
-
-            // Ensure progress doesn't exceed 100% and handle division by zero
             const progress = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
 
             return {
@@ -129,25 +66,39 @@ const CoursesPage = () => {
               code: subject.template?.substring(0, 4).toUpperCase() || "SUBJ",
               link: `/pages/courses/${subject._id}`,
               description: (subject.description?.trim()) || (subject.modules[0]?.description?.trim()) || "No description available.",
-              icon: <BookOpen className="w-6 h-6 text-[#73C1D4]" />,
-              banner: "/course-banner.svg",
-              color: "bg-[#73C1D4]/5 border-[#73C1D4]/10",
-              textColor: "text-[#73C1D4]",
-              progressColor: "bg-[#73C1D4]",
-              btnColor: "bg-[#73C1D4] text-black hover:bg-[#73C1D4]/20",
               credits: 3,
               modules: totalModules,
-              progress: progress
+              progress: progress,
+              bannerColor: subject.bannerColor || 'blue',
+              hashtags: subject.hashtags || []
             };
           });
 
-          setAllCourses(dbCourses);
-        } else {
-          setAllCourses([]);
+          // Map banner colors to accent styles for the course cards
+          const colorStyles: Record<string, any> = {
+            blue: { icon: "text-[#73C1D4]", card: "bg-[#73C1D4]/5 border-[#73C1D4]/10", text: "text-[#73C1D4]", progress: "bg-[#73C1D4]", btn: "bg-[#73C1D4] text-black hover:bg-[#73C1D4]/20" },
+            indigo: { icon: "text-[#6366F1]", card: "bg-[#6366F1]/5 border-[#6366F1]/10", text: "text-[#4F46E5]", progress: "bg-[#6366F1]", btn: "bg-[#6366F1] text-white hover:bg-[#4F46E5]" },
+            emerald: { icon: "text-[#10B981]", card: "bg-[#10B981]/5 border-[#10B981]/10", text: "text-[#059669]", progress: "bg-[#10B981]", btn: "bg-[#10B981] text-white hover:bg-[#059669]" },
+            amber: { icon: "text-[#F59E0B]", card: "bg-[#F59E0B]/5 border-[#F59E0B]/10", text: "text-[#D97706]", progress: "bg-[#F59E0B]", btn: "bg-[#F59E0B] text-white hover:bg-[#D97706]" },
+            rose: { icon: "text-[#F43F5E]", card: "bg-[#F43F5E]/5 border-[#F43F5E]/10", text: "text-[#E11D48]", progress: "bg-[#F43F5E]", btn: "bg-[#F43F5E] text-white hover:bg-[#E11D48]" },
+          };
+
+          const coursesWithStyles = dbCourses.map((course: Course) => {
+            const style = colorStyles[course.bannerColor || 'blue'] || colorStyles.blue;
+            return {
+              ...course,
+              icon: <BookOpen className={`w-6 h-6 ${style.icon}`} />,
+              color: style.card,
+              textColor: style.text,
+              progressColor: style.progress,
+              btnColor: style.btn
+            };
+          });
+
+          setAllCourses(coursesWithStyles);
         }
       } catch (error) {
-        console.error("Failed to fetch courses or progress", error);
-        setAllCourses([]);
+        console.error("Failed to fetch courses", error);
       } finally {
         setLoading(false);
       }
@@ -161,67 +112,53 @@ const CoursesPage = () => {
   return (
     <div className="flex h-screen bg-[#FFF8F8] font-sans text-gray-900 overflow-hidden">
       <DashboardSidebar activePage="courses" isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden p-4 xl:p-8">
-        {/* Header */}
-        <StudentHeader 
-          title="My Courses" 
-          subtitle="Pick up where you left off"
-          onMenuClick={() => setIsSidebarOpen(true)}
-          showSearch={true}
-        />
-
-        {/* Courses Grid - Scrollable Container */}
-        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-20">
+      <main className="flex-1 flex flex-col h-full overflow-hidden p-6 lg:p-10">
+        <StudentHeader title="My Courses" subtitle="Pick up where you left off" onMenuClick={() => setIsSidebarOpen(true)} showSearch={true} />
+        <div className="flex-1 overflow-y-auto pb-20 scrollbar-hide">
           {loading ? (
             <div className="flex justify-center items-center h-40 text-gray-400">Loading courses...</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {allCourses.map((course) => (
                 <div key={course.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm transition-all duration-300 group flex flex-col h-full overflow-hidden">
-                  {/* Banner Image */}
                   <div className="aspect-[800/531] w-full overflow-hidden">
-                    <CourseBanner 
-                      title={course.name} 
-                      description={course.description} 
-                    />
+                    <CourseBanner title={course.name} description={course.description} bannerColor={course.bannerColor} hashtags={course.hashtags} />
                   </div>
-
                   <div className="p-6 flex flex-col flex-grow">
-                    
-
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 transition-colors">
-                      {course.name}
-                    </h3>
-
-                    <div className="mt-auto space-y-4">
-                      {/* Progress Bar */}
-                      <div>
-                        <div className="flex justify-between text-xs mb-1.5 font-medium">
-                          <span className="text-gray-500">Progress</span>
-                          <span className={course.textColor}>{course.progress}%</span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${course.progressColor} transition-all duration-500`}
-                            style={{ width: `${course.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      {/* Metadata */}
-                      <div className="flex items-center gap-4 text-xs text-gray-400 border-t border-gray-50 pt-3">
-                        <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>{course.modules} Modules</span>
+                    <div className="flex justify-between items-start gap-3 mb-2">
+                      <h3 className="text-xl font-bold text-gray-900 truncate flex-1" title={course.name}>
+                        {course.name}
+                      </h3>
+                      {/* Circular Progress Gauge */}
+                      <div className="relative flex-shrink-0 w-12 h-12">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="16" fill="transparent" stroke="#F1F5F9" strokeWidth="3" />
+                          <circle
+                            cx="18" cy="18" r="16" fill="transparent"
+                            strokeWidth="3" strokeDasharray="100"
+                            strokeDashoffset={100 - course.progress}
+                            strokeLinecap="round"
+                            className={`transition-all duration-700 ${course.textColor} stroke-current`}
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-700">
+                          {course.progress}%
                         </div>
                       </div>
+                    </div>
 
-                      <Link
-                        href={course.link}
-                        className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${course.btnColor}`}
-                      >
+                    {/* Consistent space for hashtags below the title to ensure alignment */}
+                    <div className="flex flex-wrap gap-1.5 h-6 mb-4">
+                      {course.hashtags && course.hashtags.filter(Boolean).length > 0 && (
+                        course.hashtags.filter(Boolean).map((tag, i) => (
+                          <span key={i} className={`text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded ${course.bannerColor === 'blue' ? 'bg-blue-100 text-blue-700' : ''} ${course.bannerColor === 'indigo' ? 'bg-indigo-100 text-indigo-700' : ''} ${course.bannerColor === 'emerald' ? 'bg-emerald-100 text-emerald-700' : ''} ${course.bannerColor === 'amber' ? 'bg-amber-100 text-amber-700' : ''} ${course.bannerColor === 'rose' ? 'bg-rose-100 text-rose-700' : ''}`}>#{tag}</span>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Call to action button */}
+                      <Link href={course.link} className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:gap-3 ${course.btnColor} shadow-sm active:scale-[0.98]`}>
                         Continue Learning <ChevronRight className="w-4 h-4" />
                       </Link>
                     </div>

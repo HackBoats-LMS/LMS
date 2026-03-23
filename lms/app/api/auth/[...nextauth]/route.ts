@@ -1,9 +1,16 @@
+import { AuthOptions } from "next-auth"
 import NextAuth from "next-auth"
+import logger from "@/lib/logger"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import supabase from "@/lib/db"
+import { headers } from "next/headers"
+import { rateLimit } from "@/lib/rateLimit"
+import { compare } from "bcryptjs"
 
-const handler = NextAuth({
+const loginLimiter = rateLimit({ interval: 60000 });
+
+export const authOptions: AuthOptions = {
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -21,16 +28,29 @@ const handler = NextAuth({
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
+                // Rate Limiting
+                const clientIp = (await headers()).get("x-forwarded-for") || "unknown";
+                try {
+                    await loginLimiter.check(5, clientIp); // Max 5 login attempts per minute
+                } catch (e: any) {
+                    if (e.message === 'Rate limit service unavailable') {
+                        throw new Error("Authentication service is temporarily unavailable. Please try again later.");
+                    }
+                    throw new Error("Too many attempts. Please try again after a minute.");
+                }
+
                 const { data: user, error } = await supabase
                     .from('users')
                     .select('*')
                     .eq('email', credentials?.email)
-                    .eq('password', credentials?.password)
                     .eq('isAdmin', true)
                     .single();
 
-                if (user && !error) {
-                    return { ...user, isAdmin: true };
+                if (user && !error && credentials?.password) {
+                    const isValid = await compare(credentials.password, user.password);
+                    if (isValid) {
+                        return { ...user, isAdmin: true };
+                    }
                 }
                 return null;
             }
@@ -47,6 +67,13 @@ const handler = NextAuth({
     callbacks: {
         async signIn({ user, account, profile }) {
             if (account?.provider === "google") {
+                const clientIp = (await headers()).get("x-forwarded-for") || "unknown";
+                try {
+                    await loginLimiter.check(5, clientIp); // Max 5 google login attempts per minute
+                } catch (e) {
+                    return false; // Stop the sign-in process
+                }
+
                 const email = user.email;
 
                 if (!email) return false;
@@ -70,7 +97,7 @@ const handler = NextAuth({
                         }
                     }
                 } catch (e) {
-                    console.error("Error checking access mode:", e);
+                    logger.error("Error checking access mode:", e);
                 }
 
                 // Store login type in user object for later use
@@ -79,14 +106,26 @@ const handler = NextAuth({
             return true;
         },
 
-        async jwt({ token, user, trigger, session }) {
-            // Handle profile update trigger
-            if (trigger === "update" && session) {
-                if (session.isProfileComplete !== undefined) {
-                    token.isProfileComplete = session.isProfileComplete;
+        async jwt({ token, user, trigger }) {
+            // Handle profile update trigger or missing completeness flag
+            if (trigger === "update" || (token && !token.isAdmin && token.isProfileComplete === undefined)) {
+                const { data: studentUser } = await supabase
+                    .from('users')
+                    .select('fullName, rollNo, phoneNumber, whatsapp, college, department, section, image')
+                    .eq('email', token.email)
+                    .eq('isAdmin', false)
+                    .single();
+
+                if (studentUser) {
+                    const essentialFields = ['fullName', 'rollNo', 'phoneNumber', 'whatsapp', 'college', 'department', 'section'];
+                    token.isProfileComplete = essentialFields.every(field => !!(studentUser as any)[field]);
+                    if (studentUser.fullName) token.name = studentUser.fullName;
+                    if (studentUser.image) token.picture = studentUser.image;
+                } else {
+                    token.isProfileComplete = true; // Admin or other
                 }
-                if (session.name) token.name = session.name;
-                return token;
+                
+                if (trigger === "update") return token;
             }
 
             if (user) {
@@ -110,6 +149,15 @@ const handler = NextAuth({
 
                 // Set default ID
                 token.id = studentUser?.id || adminUser?.id || user.id;
+
+                // Sync image from Google if not in DB
+                if (user.image && !studentUser?.image && !adminUser?.image) {
+                    token.picture = user.image;
+                }
+                
+                if (studentUser?.image) token.picture = studentUser.image;
+                else if (adminUser?.image) token.picture = adminUser.image;
+                else if (user.image) token.picture = user.image;
 
                 // Determine session role
                 if ((user as any).isAdmin) {
@@ -136,6 +184,7 @@ const handler = NextAuth({
                     const { data: newUser } = await supabase.from('users').insert({
                         email: user.email,
                         fullName: user.name || "",
+                        image: user.image || null,
                         isAdmin: false,
                         currentSemester: 1,
                         createdAt: new Date().toISOString()
@@ -148,7 +197,7 @@ const handler = NextAuth({
                             const redis = (await import("@/lib/redis")).default;
                             if (redis) await redis.del('students:all');
                         } catch (e) {
-                            console.error("Redis invalidation failed in NextAuth:", e);
+                            logger.error("Redis invalidation failed in NextAuth:", e);
                         }
                     }
                 }
@@ -158,21 +207,6 @@ const handler = NextAuth({
                     token.isProfileComplete = essentialFields.every(field => !!(studentUser as any)[field]);
                 } else {
                     token.isProfileComplete = true; // Admins or users without student record are "complete"
-                }
-            } else if (token.isAdmin === false && token.isProfileComplete === undefined) {
-                // For users who logged in before this check was added
-                const { data: studentUser } = await supabase
-                    .from('users')
-                    .select('fullName, rollNo, phoneNumber, whatsapp, college, department, section')
-                    .eq('email', token.email)
-                    .eq('isAdmin', false)
-                    .single();
-
-                if (studentUser) {
-                    const essentialFields = ['fullName', 'rollNo', 'phoneNumber', 'whatsapp', 'college', 'department', 'section'];
-                    token.isProfileComplete = essentialFields.every(field => !!(studentUser as any)[field]);
-                } else {
-                    token.isProfileComplete = true;
                 }
             }
             return token;
@@ -184,6 +218,7 @@ const handler = NextAuth({
                 session.user = {
                     ...session.user,
                     id: token.id as string,
+                    image: token.picture as string,
                     isAdmin: token.isAdmin as boolean,
                     hasAdminRecord: token.hasAdminRecord as boolean,
                     hasStudentRecord: token.hasStudentRecord as boolean,
@@ -209,6 +244,8 @@ const handler = NextAuth({
             return `${baseUrl}/`;
         }
     }
-})
+}
+
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }

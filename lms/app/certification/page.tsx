@@ -1,28 +1,24 @@
 "use client"
 
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Script from 'next/script';
 import { CertificateTemplate } from '@/components/CertificateTemplate';
-import { PDFCertificate } from '@/components/PDFCertificate';
-import { ChevronLeft, Download, Printer, Loader2, CheckCircle } from 'lucide-react';
-import dynamic from 'next/dynamic';
-
-const PDFDownloadLink = dynamic(
-    () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
-    { ssr: false }
-);
+import { ChevronLeft, Download, Printer, Loader2 } from 'lucide-react';
+import { toPng } from 'html-to-image';
+import jsPDF from 'jspdf';
 
 function CertificateContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'registering'>('registering');
     const [certId, setCertId] = useState<string>(searchParams.get('id') || "");
-    const [isLibraryReady, setIsLibraryReady] = useState(false);
+    const [verificationToken, setVerificationToken] = useState<string>(searchParams.get('token') || "");
+    const [isGenerating, setIsGenerating] = useState(false);
 
     // Initial data from URL (Used only for preview until DB verification)
     const [recipientName, setRecipientName] = useState(searchParams.get('name') || "STUDENT");
     const [courseName, setCourseName] = useState(searchParams.get('course') || "Web Development");
+    const [issueDate, setIssueDate] = useState<string>(new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
 
     const userId = searchParams.get('userId');
     const courseId = searchParams.get('courseId');
@@ -36,12 +32,11 @@ function CertificateContent() {
 
 
     // Security: Fetch the Official Record from the Database
-    // This prevents users from editing the URL to change the name or course.
     useEffect(() => {
         async function verifyAndLoad() {
             let currentId = certId;
+            let currentToken = verificationToken;
 
-            // 1. If no ID but we have user/course info, register it first
             if (!currentId && userId && courseId) {
                 try {
                     const regRes = await fetch('/api/certification/register', {
@@ -52,25 +47,26 @@ function CertificateContent() {
                     const regData = await regRes.json();
                     if (regData.certificateId) {
                         currentId = regData.certificateId;
+                        currentToken = regData.verificationToken;
                         setCertId(currentId);
+                        setVerificationToken(currentToken);
                     }
                 } catch (e) {
                     console.error("Registration failed", e);
                 }
             }
 
-            // 2. Now fetch the OFFICIAL data using the ID
-            // This is the absolute source of truth.
-            if (currentId) {
+            if (currentId && currentToken) {
                 try {
-                    const res = await fetch(`/api/certification/verify?id=${currentId}`);
+                    const res = await fetch(`/api/certification/verify?id=${currentId}&token=${currentToken}`);
                     const officialData = await res.json();
 
                     if (officialData && !officialData.error) {
-                        // FORCE the official database names onto the certificate
-                        // This overrides any spoofed values in the URL
                         setRecipientName(officialData.userName);
                         setCourseName(officialData.courseName);
+                        if (officialData.issueDate) {
+                            setIssueDate(new Date(officialData.issueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
+                        }
                     }
                 } catch (e) {
                     console.error("Verification failed", e);
@@ -81,19 +77,52 @@ function CertificateContent() {
         verifyAndLoad();
     }, [userId, courseId, certId]);
 
-    const [pdfKey, setPdfKey] = useState(Date.now());
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
-    // Update PDF key when data changes to ensure fresh generation
-    useEffect(() => {
-        if (isMounted) {
-            setPdfKey(Date.now());
+    const handleDownload = async () => {
+        setIsGenerating(true);
+        const element = document.getElementById('certificate-ghost-capture');
+        if (!element) return;
+
+        try {
+            // Ensure all fonts are loaded before capture
+            await document.fonts.ready;
+            
+            // Give extra time for any layout shifts
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            const dataUrl = await toPng(element, {
+                quality: 1,
+                pixelRatio: 3, // 3x (3366x2382) is perfect for 300dpi A4 print quality
+                skipFonts: false,
+                cacheBust: true,
+                includeQueryParams: true,
+                style: {
+                    transform: 'scale(1)',
+                    transformOrigin: 'top left',
+                    backgroundColor: 'white'
+                }
+            });
+
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4',
+                compress: true
+            });
+
+            pdf.addImage(dataUrl, 'PNG', 0, 0, 297, 210, undefined, 'MEDIUM');
+            pdf.save(`HB_CERT_${certId || 'PREVIEW'}.pdf`);
+        } catch (err) {
+            console.error('Error generating PDF:', err);
+        } finally {
+            setIsGenerating(false);
         }
-    }, [recipientName, courseName, certId, isMounted]);
+    };
 
     if (status === 'registering') return (
         <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center gap-6 font-sans">
@@ -179,42 +208,17 @@ function CertificateContent() {
 
                 <div className="flex items-center gap-4">
                     {isMounted ? (
-                        <Suspense fallback={<div className="px-10 py-3.5 bg-gray-200 rounded-2xl animate-pulse w-48 text-transparent font-bold text-sm">Instant Download</div>}>
-                            <PDFDownloadLink
-                                key={pdfKey}
-                                document={<PDFCertificate recipientName={recipientName} courseName={courseName} date={new Date().toLocaleDateString()} certificateId={certId} />}
-                                fileName={`HB_CERT_${certId}.pdf`}
-                                style={{
-                                    textDecoration: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 12,
-                                    paddingLeft: 40,
-                                    paddingRight: 40,
-                                    paddingTop: 14,
-                                    paddingBottom: 14,
-                                    borderRadius: 16,
-                                    backgroundColor: '#FF5B5B',
-                                    color: 'white',
-                                    fontWeight: 'bold',
-                                    fontSize: 14,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 20px 25px -5px rgba(255, 91, 91, 0.2)',
-                                }}
-                            >
-                                {/* @ts-ignore */}
-                                {({ loading, error }) => (
-                                    <>
-                                        {loading ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
-                                        {loading ? 'Preparing...' : error ? 'Export Failed' : 'Instant Download'}
-                                    </>
-                                )}
-                            </PDFDownloadLink>
-                        </Suspense>
+                        <button
+                            onClick={handleDownload}
+                            disabled={isGenerating}
+                            className="flex items-center gap-3 px-10 py-3.5 rounded-2xl bg-[#FF5B5B] text-white font-bold text-sm cursor-pointer shadow-[0_20px_25px_-5px_rgba(255,91,91,0.2)] hover:bg-[#FF4545] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
+                            {isGenerating ? 'Preparing...' : 'Instant Download'}
+                        </button>
                     ) : (
                         <div className="px-10 py-3.5 bg-gray-100 rounded-2xl text-gray-400 font-bold text-sm border border-black/5 animate-pulse">
-                           Loading Engine...
+                            Loading Engine...
                         </div>
                     )}
 
@@ -230,17 +234,17 @@ function CertificateContent() {
             <main className="flex-1 w-full flex flex-col items-center justify-center p-6 lg:p-12 relative">
                 {/* VISUAL PREVIEW - Hidden in Print */}
                 <div className="relative group transition-all duration-1000 scale-[0.32] sm:scale-[0.45] md:scale-[0.55] lg:scale-[0.7] xl:scale-[0.85] shadow-2xl bg-white origin-center print:hidden rounded-lg overflow-hidden border border-black/5">
-                    <CertificateTemplate recipientName={recipientName} courseName={courseName} date={new Date().toLocaleDateString()} certificateId={certId} />
+                    <CertificateTemplate recipientName={recipientName} courseName={courseName} date={issueDate} certificateId={certId} verificationToken={verificationToken} />
                 </div>
 
                 {/* THE EXPORT SOURCE (Invisible in UI, the only thing that shows in Print) */}
-                <div 
-                    id="print-portal-source" 
+                <div
+                    id="print-portal-source"
                     className="absolute top-0 left-[-9999px] opacity-100 pointer-events-none print:left-0 z-[-1]"
                     style={{ width: '1122px', height: '794px' }}
                 >
                     <div id="certificate-ghost-capture" style={{ width: '1122px', height: '794px', overflow: 'hidden', backgroundColor: 'white' }}>
-                        <CertificateTemplate recipientName={recipientName} courseName={courseName} date={new Date().toLocaleDateString()} certificateId={certId} />
+                        <CertificateTemplate recipientName={recipientName} courseName={courseName} date={issueDate} certificateId={certId} verificationToken={verificationToken} />
                     </div>
                 </div>
             </main>

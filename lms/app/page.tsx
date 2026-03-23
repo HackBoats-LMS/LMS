@@ -508,7 +508,7 @@ const StudentDashboard = () => {
       <DashboardSidebar activePage="dashboard" isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+      <main className="flex-1 overflow-y-auto p-6 lg:p-10">
         {/* Header */}
         <StudentHeader 
           title="Dashboard" 

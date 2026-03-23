@@ -306,7 +306,7 @@ const EventsPage = () => {
                                                 alt={item.title}
                                                 className="w-full h-full object-cover group-hover/image:scale-105 transition-transform duration-500"
                                                 onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=Event';
+                                                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x200?text=Event';
                                                 }}
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>

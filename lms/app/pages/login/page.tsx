@@ -36,18 +36,18 @@ const login = () => {
 
         <button
           onClick={() => signIn("google", { callbackUrl: "/" })}
-          className="relative z-50 bg-[#E65D25] text-white font-monument px-6 py-3 rounded-full flex items-center gap-3 cursor-pointer hover:bg-[#d5521f] transition-all active:scale-95"
+          className="relative z-50 bg-[#E65D25] text-white font-monument px-6 py-3 rounded-full flex items-center gap-4 cursor-pointer hover:bg-[#d5521f] transition-all active:scale-95 shadow-lg shadow-[#E65D25]/20 group"
         >
-          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
             <Image
-              src="https://kalvium.community/assets/google_icon-c3f37307.svg"
+              src="/google-icon.svg"
               alt="Google Logo"
               width={20}
               height={20}
             />
           </div>
 
-          <span>Continue with Google</span>
+          <span className="text-lg">Continue with Google</span>
 
           <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
             <ArrowRight className="text-black" />
