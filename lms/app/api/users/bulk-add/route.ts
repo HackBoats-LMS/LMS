@@ -1,14 +1,41 @@
 import supabase from "@/lib/db";
 import { NextResponse } from "next/server";
 import redis from "@/lib/redis";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../auth/[...nextauth]/route";
+
+import { z } from "zod";
+
+const studentSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  fullName: z.string().optional().default(""),
+  phoneNumber: z.string().optional().default(""),
+  college: z.string().optional().default(""),
+  currentSemester: z.union([z.number(), z.string()]).optional().default(1).transform(v => Number(v)),
+});
+
+const bulkAddSchema = z.object({
+  students: z.array(studentSchema).min(1, "At least one student is required"),
+});
 
 export async function POST(req: Request) {
   try {
-    const { students } = await req.json();
-
-    if (!Array.isArray(students) || students.length === 0) {
-      return NextResponse.json({ ok: false, error: "Invalid data format" }, { status: 400 });
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 403 });
     }
+
+    const body = await req.json();
+    const validation = bulkAddSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json({
+        ok: false,
+        error: validation.error.issues[0].message
+      }, { status: 400 });
+    }
+
+    const { students } = validation.data;
 
     console.log(`API Bulk Add: Received ${students.length} students`);
 

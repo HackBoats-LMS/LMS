@@ -126,7 +126,7 @@ const DynamicCoursePage = () => {
 
     // --- Overview View ---
     const renderOverview = () => (
-        <div className="w-full space-y-8 px-8 pb-8">
+        <div className="w-full space-y-8">
             {/* Header Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -228,16 +228,18 @@ const DynamicCoursePage = () => {
                                                 setVideoCompleted(false);
                                             }
                                         }}
-                                        className={`p-4 transition-colors flex items-center gap-4 group ${isLocked
-                                            ? 'opacity-50 cursor-not-allowed bg-gray-50'
-                                            : 'hover:bg-gray-50 cursor-pointer'
+                                        className={`p-4 transition-all flex items-center gap-5 group ${isLocked
+                                            ? 'opacity-50 cursor-not-allowed bg-gray-50 border-l-transparent'
+                                            : isCompleted 
+                                                ? 'hover:bg-gray-50 cursor-pointer border-l-green-500 bg-white'
+                                                : 'hover:bg-gray-50 cursor-pointer border-l-transparent bg-white'
                                             }`}
                                     >
-                                        <div className={`w-10 h-10 rounded-lg border flex items-center justify-center font-bold text-sm transition-colors ${isCompleted
+                                        <div className={`w-10 h-10 rounded-lg border flex items-center justify-center font-bold text-sm transition-colors flex-shrink-0 ${isCompleted
                                             ? 'bg-green-600 text-white border-green-600'
                                             : isLocked
                                                 ? 'bg-gray-100 text-gray-400 border-gray-200'
-                                                : 'bg-white text-gray-500 border-gray-200 group-hover:border-blue-200 group-hover:text-blue-600'
+                                                : 'bg-white text-gray-500 border-gray-200 group-hover:border-[#73C1D4] group-hover:text-[#73C1D4]'
                                             }`}>
                                             {isLocked ? (
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
@@ -245,15 +247,15 @@ const DynamicCoursePage = () => {
                                                 idx + 1
                                             )}
                                         </div>
-                                        <div>
-                                            <h4 className={`font-bold text-sm transition-colors ${isLocked ? 'text-gray-400' : 'text-gray-800 group-hover:text-blue-600'}`}>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className={`font-bold text-sm transition-colors truncate ${isLocked ? 'text-gray-400' : 'text-gray-800'}`}>
                                                 {module.name}
                                             </h4>
-                                            <p className="text-xs text-gray-500 line-clamp-1">{module.description}</p>
+                                            <p className="text-xs text-gray-500 truncate mt-1">{module.description}</p>
                                         </div>
-                                        <div className="ml-auto">
+                                        <div className="w-6 flex items-center justify-center flex-shrink-0">
                                             {!isLocked && (
-                                                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500" />
+                                                <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[#73C1D4] transition-colors" />
                                             )}
                                         </div>
                                     </div>
@@ -301,21 +303,21 @@ const DynamicCoursePage = () => {
             <DashboardSidebar activePage="courses" isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <main className="flex-1 overflow-y-auto p-6 lg:p-10" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {/* Header */}
         <StudentHeader 
           title={
             <div className="flex items-center gap-2">
               <Link href="/pages/courses" className="text-sm font-normal text-gray-500 hover:text-[#73C1D4] transition-colors">Courses</Link>
               <ChevronRight className="w-4 h-4 text-gray-400" />
-              <span className="line-clamp-1">{subject.name}</span>
+              <span className="text-lg font-bold text-gray-800 line-clamp-1">{subject.name}</span>
             </div>
           }
           onMenuClick={() => setIsSidebarOpen(true)}
         />
 
                 {currentModule ? (
-                    <div className="w-full space-y-8 px-8 pb-8">
+                    <div className="w-full space-y-8">
                         {/* Module Content */}
                         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                             <div className="mb-6 pb-6 border-b border-gray-100">

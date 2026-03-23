@@ -2,14 +2,49 @@ import { NextRequest, NextResponse } from "next/server";
 import supabase from "@/lib/db";
 import { getModuleName } from "@/lib/moduleNames";
 import redis from "@/lib/redis"; // Import Redis client
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 // Cache key helper
 const getCacheKey = (email: string, subject: string | null) =>
   `progress:${email}:${subject || 'all'}`;
 
+import { z } from "zod";
+
+const progressSchema = z.object({
+  userEmail: z.string().email("Invalid email format"),
+  subject: z.string().min(1, "Subject is required"),
+  unitId: z.union([z.number(), z.string()]),
+  moduleId: z.union([z.number(), z.string()]),
+  score: z.number().min(0, "Score cannot be negative"),
+  totalQuestions: z.number().min(1, "Total questions must be at least 1"),
+  completed: z.boolean().optional(),
+  moduleName: z.string().optional(),
+});
+
 export async function POST(req: NextRequest) {
   try {
-    const { userEmail, subject, unitId, moduleId, score, totalQuestions, completed, moduleName: providedModuleName } = await req.json();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const validation = progressSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json({
+        ok: false,
+        error: validation.error.issues[0].message
+      }, { status: 400 });
+    }
+
+    const { userEmail, subject, unitId, moduleId, score, totalQuestions, completed, moduleName: providedModuleName } = validation.data;
+
+    // Ownership Check: Users can only update their own progress unless they're an admin
+    if (session.user.email !== userEmail && !session.user.isAdmin) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
 
     // Ensure unitId and moduleId are integers
     const unitIdInt = parseInt(String(unitId), 10);
@@ -81,11 +116,27 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const userEmail = searchParams.get("userEmail");
     const subject = searchParams.get("subject");
+    const isAll = searchParams.get("all") === "true";
 
-    if (!userEmail && searchParams.get("all") !== "true") {
+    // 1. Ownership Check: Only admin can see "all" progress
+    if (isAll && !session.user.isAdmin) {
+      return NextResponse.json({ ok: false, error: "Forbidden: Admin access only" }, { status: 403 });
+    }
+
+    // 2. Ownership Check: Students can only see their own email progress
+    if (userEmail && session.user.email !== userEmail && !session.user.isAdmin) {
+      return NextResponse.json({ ok: false, error: "Forbidden: Cannot view other users progress" }, { status: 403 });
+    }
+
+    if (!userEmail && !isAll) {
       return NextResponse.json({ error: "User email required" }, { status: 400 });
     }
 

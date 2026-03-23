@@ -24,6 +24,8 @@ export interface ISubject extends Document {
     name: string;
     description?: string;
     template?: string;
+    bannerColor?: string;
+    hashtags?: string[];
     modules: IModule[];
     createdAt: Date;
     updatedAt: Date;
@@ -42,10 +44,10 @@ const QuizSchema = new Schema<IQuiz>({
 
 const ModuleSchema = new Schema<IModule>({
     name: { type: String, required: true },
-    videoId: { type: String, required: true },
-    place: { type: String },
+    videoId: { type: String },
+    place: { type: String, required: true },
     description: { type: String },
-    quiz: { type: QuizSchema, default: null },
+    quiz: { type: Schema.Types.Mixed, default: null },
 });
 
 const SubjectSchema = new Schema<ISubject>(
@@ -53,10 +55,17 @@ const SubjectSchema = new Schema<ISubject>(
         name: { type: String, required: true, unique: true },
         description: { type: String },
         template: { type: String },
+        bannerColor: { type: String, default: 'blue' },
+        hashtags: { type: [String], default: [] },
         modules: [ModuleSchema],
     },
     { timestamps: true }
 );
+
+// Use delete to force re-compilation of the model in development (solves schema mismatch/caching issues)
+if (process.env.NODE_ENV !== "production") {
+    delete mongoose.models.Subject;
+}
 
 const Subject: Model<ISubject> =
     mongoose.models.Subject || mongoose.model<ISubject>("Subject", SubjectSchema);

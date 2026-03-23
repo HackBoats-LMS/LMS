@@ -1,22 +1,47 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Subject from "@/lib/models/Subject";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
+
+import { z } from "zod";
+
+const subjectSchema = z.object({
+    name: z.string().min(1, "Subject name is required"),
+    description: z.string().optional(),
+    template: z.string().optional(),
+    bannerColor: z.string().optional(),
+    hashtags: z.array(z.string()).optional(),
+    modules: z.array(z.any()).optional(),
+    // Keep legacy fields for compatibility
+    code: z.string().optional(),
+    image_url: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    credits: z.number().optional(),
+});
 
 export async function POST(req: Request) {
     try {
-        await dbConnect();
-        const body = await req.json();
-
-        // Basic validation
-        if (!body.name) {
-            return NextResponse.json(
-                { success: false, error: "Subject name is required" },
-                { status: 400 }
-            );
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.isAdmin) {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
         }
 
+        const body = await req.json();
+        const validation = subjectSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json({
+                success: false,
+                error: validation.error.issues[0].message
+            }, { status: 400 });
+        }
+
+        await dbConnect();
+        const { name } = validation.data;
+
         // Check if subject already exists
-        const existingSubject = await Subject.findOne({ name: body.name });
+        const existingSubject = await Subject.findOne({ name });
         if (existingSubject) {
             return NextResponse.json(
                 { success: false, error: "Subject with this name already exists" },
@@ -24,19 +49,19 @@ export async function POST(req: Request) {
             );
         }
 
-        if (process.env.NODE_ENV === 'development') {
-            console.log("Creating new subject with payload:", JSON.stringify(body, null, 2));
-        }
-        const subject = await Subject.create(body);
-        if (process.env.NODE_ENV === 'development') {
-            console.log("Successfully created subject:", subject._id);
-        }
+        const subject = await Subject.create(validation.data);
+
+        // Audit Logging
+        console.log(`[AUDIT] Action: CREATE_SUBJECT, Actor: ${session.user.email}, Target: ${name}, Time: ${new Date().toISOString()}`);
 
         return NextResponse.json({ success: true, data: subject });
     } catch (error: any) {
         console.error("Error creating subject:", error);
         return NextResponse.json(
-            { success: false, error: error.message || "Failed to create subject" },
+            {
+                success: false,
+                error: process.env.NODE_ENV === "production" ? "Internal Server Error" : (error.message || "Failed to create subject")
+            },
             { status: 500 }
         );
     }
@@ -44,7 +69,11 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
     try {
-        await dbConnect();
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.isAdmin) {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
+        }
+
         const body = await req.json();
         const { _id, ...updateData } = body;
 
@@ -55,23 +84,42 @@ export async function PUT(req: Request) {
             );
         }
 
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`Updating subject ${_id} with data:`, JSON.stringify(updateData, null, 2));
+        const validation = subjectSchema.partial().safeParse(updateData);
+        if (!validation.success) {
+            return NextResponse.json({
+                success: false,
+                error: validation.error.issues[0].message
+            }, { status: 400 });
         }
+
+        await dbConnect();
+
+        // Final sanity check for development
+        if (process.env.NODE_ENV !== "production") {
+            console.log(`[PUT SUBJECT] ID: ${_id}, Update:`, validation.data);
+        }
+
         const subject = await Subject.findByIdAndUpdate(
             _id,
-            { $set: updateData },
+            { $set: validation.data },
             { new: true, runValidators: true }
         );
-        if (process.env.NODE_ENV === 'development') {
-            console.log("Subject updated successfully:", subject ? "found and updated" : "not found");
+
+        if (process.env.NODE_ENV !== "production") {
+            console.log(`[PUT SUBJECT] Result:`, subject?.name, "Color:", subject?.bannerColor);
         }
+
+        // Audit Logging
+        console.log(`[AUDIT] Action: UPDATE_SUBJECT, Actor: ${session.user.email}, Target: ${_id}, Time: ${new Date().toISOString()}`);
 
         return NextResponse.json({ success: true, data: subject });
     } catch (error: any) {
         console.error("Error updating subject:", error);
         return NextResponse.json(
-            { success: false, error: error.message || "Failed to update subject" },
+            {
+                success: false,
+                error: process.env.NODE_ENV === "production" ? "Internal Server Error" : (error.message || "Failed to update subject")
+            },
             { status: 500 }
         );
     }
@@ -79,6 +127,11 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.isAdmin) {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
+        }
+
         await dbConnect();
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
@@ -99,11 +152,17 @@ export async function DELETE(req: Request) {
             );
         }
 
+        // Audit Logging
+        console.log(`[AUDIT] Action: DELETE_SUBJECT, Actor: ${session.user.email}, Target: ${id}, Time: ${new Date().toISOString()}`);
+
         return NextResponse.json({ success: true, message: "Subject deleted successfully" });
     } catch (error: any) {
         console.error("Error deleting subject:", error);
         return NextResponse.json(
-            { success: false, error: error.message || "Failed to delete subject" },
+            {
+                success: false,
+                error: process.env.NODE_ENV === "production" ? "Internal Server Error" : (error.message || "Failed to delete subject")
+            },
             { status: 500 }
         );
     }
@@ -117,7 +176,10 @@ export async function GET() {
     } catch (error: any) {
         console.error("Error fetching subjects:", error);
         return NextResponse.json(
-            { success: false, error: error.message || "Failed to fetch subjects" },
+            {
+                success: false,
+                error: process.env.NODE_ENV === "production" ? "Internal Server Error" : (error.message || "Failed to fetch subjects")
+            },
             { status: 500 }
         );
     }

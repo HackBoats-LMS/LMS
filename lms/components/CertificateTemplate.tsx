@@ -75,6 +75,7 @@ export interface CertificateTemplateProps {
     courseName: string;
     date?: string;
     certificateId?: string;
+    verificationToken?: string;
 }
 
 export const CertificateTemplate: React.FC<CertificateTemplateProps> = ({
@@ -82,6 +83,7 @@ export const CertificateTemplate: React.FC<CertificateTemplateProps> = ({
     courseName,
     date = "March 13, 2026",
     certificateId = 'HB-2024-001',
+    verificationToken = '',
 }) => {
     return (
         <div className={`${orbitron.variable} ${ibmPlexSans.variable} font-sans block leading-none`}>

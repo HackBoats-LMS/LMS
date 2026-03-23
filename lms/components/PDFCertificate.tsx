@@ -194,13 +194,14 @@ interface PDFCertificateProps {
     courseName: string;
     date: string;
     certificateId: string;
+    verificationToken?: string;
 }
 
-export const PDFCertificate: React.FC<PDFCertificateProps> = ({ recipientName, courseName, date, certificateId }) => (
+export const PDFCertificate: React.FC<PDFCertificateProps> = ({ recipientName, courseName, date, certificateId, verificationToken }) => (
     <Document>
         <Page size="A4" orientation="landscape" style={styles.page}>
             <PDFRightBar />
-            
+
             <View style={styles.container}>
                 <View style={styles.logoContainer}>
                     <PDFHackBoatsLogo />
@@ -227,7 +228,7 @@ export const PDFCertificate: React.FC<PDFCertificateProps> = ({ recipientName, c
                         <Text style={styles.stampTitle}>HACKBOATS</Text>
                     </View>
                     <Text style={styles.id}>ID: {certificateId}</Text>
-                    <Text style={styles.verifyUrl}>VERIFY AT Lms.hackboats.com/CERTIFICATION/VERIFY</Text>
+                    <Text style={styles.verifyUrl}>VERIFY AT HACKBOATS.COM/CERTIFICATION/VERIFY/{certificateId}{verificationToken ? `?TOKEN=${verificationToken.toUpperCase()}` : ''}</Text>
                     <Text style={styles.date}>{date}</Text>
                 </View>
 

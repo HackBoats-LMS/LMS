@@ -1,11 +1,12 @@
 import Redis from 'ioredis';
+import logger from './logger';
 
 const getRedisClient = () => {
     if (process.env.REDIS_URL) {
-        console.log('Redis: Connecting...');
+        logger.info('Redis: Connecting...');
         return new Redis(process.env.REDIS_URL);
     }
-    console.log('Redis: URL not found, using null client (caching disabled)');
+    logger.warn('Redis: URL not found, using null client (caching disabled)');
     return null;
 };
 

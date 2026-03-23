@@ -1,12 +1,14 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { CertificateTemplate } from '@/components/CertificateTemplate';
 import { CheckCircle, AlertCircle, Loader2, ShieldCheck, Search } from 'lucide-react';
 
 export default function VerifyCertificate() {
     const { id } = useParams();
+    const searchParams = useSearchParams();
+    const token = searchParams.get('token');
     const [certData, setCertData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -14,7 +16,8 @@ export default function VerifyCertificate() {
     useEffect(() => {
         async function fetchCert() {
             try {
-                const res = await fetch(`/api/certification/verify?id=${id}`);
+                if (!token) throw new Error("Missing token");
+                const res = await fetch(`/api/certification/verify?id=${id}&token=${token}`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 setCertData(data);
@@ -25,7 +28,7 @@ export default function VerifyCertificate() {
             }
         }
         if (id) fetchCert();
-    }, [id]);
+    }, [id, token]);
 
     if (loading) return (
         <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center gap-6 font-sans">

@@ -1,13 +1,40 @@
 import supabase from "@/lib/db";
 import { NextResponse } from "next/server";
 import redis from "@/lib/redis";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../auth/[...nextauth]/route";
+import { hash } from "bcryptjs";
 
 // Optional: Set allowed email domains (empty array = allow all)
 const ALLOWED_DOMAINS: string[] = []; // Example: ['ggu.edu.in', 'gmail.com']
 
+import { z } from "zod";
+
+const addUserSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  isAdmin: z.boolean().optional().default(false),
+  password: z.string().min(8, "Password must be at least 8 characters long").optional(),
+  college: z.string().optional().default(""),
+});
+
 export async function POST(req: Request) {
   try {
-    const { email, isAdmin, password, college } = await req.json();
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const validation = addUserSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json({
+        ok: false,
+        error: validation.error.issues[0].message
+      }, { status: 400 });
+    }
+
+    const { email, isAdmin, password, college } = validation.data;
     console.log(`API User Add: Attempting to add ${email} (isAdmin: ${isAdmin})`);
 
     // Optional: Email domain validation (disabled for now)
@@ -46,7 +73,7 @@ export async function POST(req: Request) {
 
     // Add password only for admin users
     if (isAdmin && password) {
-      userData.password = password;
+      userData.password = await hash(password, 10);
     }
 
     // Create new user
@@ -61,14 +88,24 @@ export async function POST(req: Request) {
 
     // Invalidate Cache
     if (redis) {
-      await redis.del('students:all');
-      console.log('API User Add: Invalidated students:all cache');
+      try {
+        await redis.del('students:all');
+        console.log('API User Add: Invalidated students:all cache');
+      } catch (redisError) {
+        console.error('API User Add: Redis cache invalidation failed:', redisError);
+      }
     }
+
+    // Audit Logging
+    console.log(`[AUDIT] Action: ADD_USER, Actor: ${session.user.email}, Target: ${email}, Time: ${new Date().toISOString()}`);
 
     console.log(`API User Add: Successfully added ${email}`);
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     console.error(`API User Add: Fatal error:`, err);
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ 
+      ok: false, 
+      error: process.env.NODE_ENV === "production" ? "Internal Server Error" : err.message 
+    }, { status: 500 });
   }
 }

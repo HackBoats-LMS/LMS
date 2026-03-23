@@ -23,7 +23,7 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({
     const { data: session } = useSession();
 
     return (
-        <header className="flex-none flex justify-between items-center mb-8">
+        <header className="flex-none flex justify-between items-center mb-8 pt-2">
             <div className="flex items-center gap-4">
                 <button
                     onClick={onMenuClick}
@@ -32,7 +32,7 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({
                     <Menu size={24} />
                 </button>
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800 line-clamp-1">{title}</h1>
+                    <div className="text-2xl font-bold text-gray-800 line-clamp-1">{title}</div>
                     {subtitle && <p className="text-sm text-gray-500 mt-1 hidden sm:block">{subtitle}</p>}
                 </div>
             </div>
