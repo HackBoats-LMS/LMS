@@ -41,9 +41,9 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ activePage, isOpen, setIsOpe
                 <div className="flex items-center justify-between mb-10">
                     <div className="flex items-center gap-2 text-[#FF5B5B]">
                         <img
-                            src="https://www.hackboats.com/images/logo.png"
+                            src="/logo.png"
                             alt="Academy Logo"
-                            className="h-8 w-auto"
+                            className="h-8 w-auto px-4"
                         />
                     </div>
                     <button
