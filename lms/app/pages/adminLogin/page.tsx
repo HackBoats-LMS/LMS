@@ -48,11 +48,11 @@ export default function AdminLogin() {
       <nav className="absolute top-0 left-0 w-full z-50 flex justify-between items-center p-6 md:px-16 lg:px-24">
         <div className="text-white text-2xl font-bold tracking-wider">
           <Image
-            src={"https://www.hackboats.com/images/logo.png"}
+            src={"/logo.png"}
             alt="Logo"
             width={170}
             height={170}
-            className='w-44 h-auto'
+            className='w-44 h-auto pt-4'
           />
         </div>
         <div className="flex gap-4">
