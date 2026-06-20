@@ -55,7 +55,7 @@ export async function POST(req: Request) {
         // Audit Logging
         console.log(`[AUDIT] Action: CREATE_SUBJECT, Actor: ${session.user.email}, Target: ${name}, Time: ${new Date().toISOString()}`);
 
-        revalidateTag("subjects");
+        revalidateTag("subjects", "default");
 
         return NextResponse.json({ success: true, data: subject });
     } catch (error: any) {
@@ -115,7 +115,7 @@ export async function PUT(req: Request) {
         // Audit Logging
         console.log(`[AUDIT] Action: UPDATE_SUBJECT, Actor: ${session.user.email}, Target: ${_id}, Time: ${new Date().toISOString()}`);
 
-        revalidateTag("subjects");
+        revalidateTag("subjects", "default");
 
         return NextResponse.json({ success: true, data: subject });
     } catch (error: any) {
@@ -159,8 +159,7 @@ export async function DELETE(req: Request) {
 
         // Audit Logging
         console.log(`[AUDIT] Action: DELETE_SUBJECT, Actor: ${session.user.email}, Target: ${id}, Time: ${new Date().toISOString()}`);
-
-        revalidateTag("subjects");
+        revalidateTag("subjects", "default");
 
         return NextResponse.json({ success: true, message: "Subject deleted successfully" });
     } catch (error: any) {
