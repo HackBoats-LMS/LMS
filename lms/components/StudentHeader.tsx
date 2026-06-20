@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Menu, User, Search, Bell } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -21,6 +21,7 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({
     showNotifications = false 
 }) => {
     const { data: session } = useSession();
+    const [imageError, setImageError] = useState(false);
 
     return (
         <header className="flex-none flex justify-between items-center mb-8 pt-2">
@@ -59,8 +60,13 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({
                 <Link href="/pages/profile" className="flex items-center gap-3 hover:opacity-80 transition-all group">
                     <span className="text-sm font-medium text-gray-700 hidden sm:block group-hover:text-gray-900">{session?.user?.name || "Student"}</span>
                     <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center transition-transform group-hover:scale-105">
-                        {session?.user?.image ? (
-                            <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
+                        {session?.user?.image && !imageError ? (
+                            <img 
+                                src={session.user.image} 
+                                alt="Profile" 
+                                className="w-full h-full object-cover" 
+                                onError={() => setImageError(true)}
+                            />
                         ) : (
                             <User className="text-gray-400" />
                         )}

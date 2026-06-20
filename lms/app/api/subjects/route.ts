@@ -3,6 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import Subject from "@/lib/models/Subject";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { unstable_cache, revalidateTag } from "next/cache";
 
 import { z } from "zod";
 
@@ -53,6 +54,8 @@ export async function POST(req: Request) {
 
         // Audit Logging
         console.log(`[AUDIT] Action: CREATE_SUBJECT, Actor: ${session.user.email}, Target: ${name}, Time: ${new Date().toISOString()}`);
+
+        revalidateTag("subjects");
 
         return NextResponse.json({ success: true, data: subject });
     } catch (error: any) {
@@ -112,6 +115,8 @@ export async function PUT(req: Request) {
         // Audit Logging
         console.log(`[AUDIT] Action: UPDATE_SUBJECT, Actor: ${session.user.email}, Target: ${_id}, Time: ${new Date().toISOString()}`);
 
+        revalidateTag("subjects");
+
         return NextResponse.json({ success: true, data: subject });
     } catch (error: any) {
         console.error("Error updating subject:", error);
@@ -155,6 +160,8 @@ export async function DELETE(req: Request) {
         // Audit Logging
         console.log(`[AUDIT] Action: DELETE_SUBJECT, Actor: ${session.user.email}, Target: ${id}, Time: ${new Date().toISOString()}`);
 
+        revalidateTag("subjects");
+
         return NextResponse.json({ success: true, message: "Subject deleted successfully" });
     } catch (error: any) {
         console.error("Error deleting subject:", error);
@@ -168,11 +175,20 @@ export async function DELETE(req: Request) {
     }
 }
 
-export async function GET() {
-    try {
+const getCachedSubjects = unstable_cache(
+    async () => {
         await dbConnect();
         const subjects = await Subject.find({});
-        return NextResponse.json({ success: true, data: subjects });
+        return subjects;
+    },
+    ['subjects-all'],
+    { revalidate: 3600, tags: ['subjects'] }
+);
+
+export async function GET() {
+    try {
+        const subjects = await getCachedSubjects();
+        return NextResponse.json({ success: true, data: subjects, source: "vercel-cache" });
     } catch (error: any) {
         console.error("Error fetching subjects:", error);
         return NextResponse.json(

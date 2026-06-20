@@ -457,6 +457,7 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
                                         <input type="text" value={m.videoId} onChange={(e) => updateModule(i, 'videoId', e.target.value)} placeholder="Video ID" className="px-3 py-2 border rounded-lg text-sm" />
                                         <input type="text" value={m.place} onChange={(e) => updateModule(i, 'place', e.target.value)} placeholder="Order" className="px-3 py-2 border rounded-lg text-sm" />
                                     </div>
+                                    <textarea value={m.description || ''} onChange={(e) => updateModule(i, 'description', e.target.value)} placeholder="Module Description" rows={2} className="w-full px-3 py-2 border rounded-lg text-sm" />
                                 </div>
                                 <div className="md:col-span-4 flex flex-col justify-center items-center border-l pl-6">
                                     <span className={`text-xs font-bold mb-2 ${m.quiz ? 'text-green-600' : 'text-gray-400'}`}>{m.quiz ? '✓ Quiz Added' : 'No Quiz'}</span>
@@ -473,6 +474,18 @@ export default function SubjectManager({ onBack }: { onBack: () => void }) {
                     <button type="submit" disabled={loading} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold">{loading ? 'Saving...' : 'Save Subject'}</button>
                 </div>
             </form>
+
+            {quizModalOpen && currentModuleIndex !== null && (
+                <QuizEditor
+                    moduleName={modules[currentModuleIndex]?.name || `Module ${modules[currentModuleIndex]?.place || '0'}`}
+                    initialQuiz={modules[currentModuleIndex]?.quiz}
+                    onSave={saveQuiz}
+                    onCancel={() => {
+                        setQuizModalOpen(false);
+                        setCurrentModuleIndex(null);
+                    }}
+                />
+            )}
         </div>
     );
 }
