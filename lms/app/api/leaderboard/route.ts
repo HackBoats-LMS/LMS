@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import supabase from "@/lib/db";
 import redis from "@/lib/redis"; // Import Redis client
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url);
+        const forceRefresh = searchParams.get('refresh') === 'true';
+
         // Try Redis Cache first
-        if (redis) {
+        if (redis && !forceRefresh) {
             const cachedData = await redis.get('lms_leaderboard_v2');
             if (cachedData) {
                 return NextResponse.json({ success: true, data: JSON.parse(cachedData), source: 'cache' });
@@ -15,7 +18,7 @@ export async function GET() {
         // 1. Fetch Normal Progress Data (All-time progress for normal display)
         const { data: progressData, error: progressError } = await supabase
             .from('progress')
-            .select('userEmail, score, completed');
+            .select('userEmail, score, completed, percentage');
 
         if (progressError) throw progressError;
 
@@ -39,7 +42,8 @@ export async function GET() {
         });
 
         progressData.forEach(p => {
-            if (userStatsMap[p.userEmail] && (p.completed || p.score >= 60)) {
+            const percentage = p.percentage ?? 0;
+            if (userStatsMap[p.userEmail] && (p.completed || percentage >= 60)) {
                 userStatsMap[p.userEmail].modulesCompleted += 1;
                 // Award 20 XP per module completed (matching the logic in page.tsx)
                 userStatsMap[p.userEmail].totalXP += 20;

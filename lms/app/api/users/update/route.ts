@@ -14,8 +14,8 @@ const updateUserSchema = z.object({
   whatsapp: z.string().optional(),
   college: z.string().optional(),
   department: z.string().optional(),
-  year: z.union([z.number(), z.string()]).optional().transform(v => Number(v)),
-  currentSemester: z.union([z.number(), z.string()]).optional().transform(v => Number(v)),
+  year: z.union([z.number(), z.string()]).transform(v => v !== undefined ? Number(v) : undefined).optional(),
+  currentSemester: z.union([z.number(), z.string()]).transform(v => v !== undefined ? Number(v) : undefined).optional(),
   section: z.string().optional(),
 });
 
